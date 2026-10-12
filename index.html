@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BuiTai Heritage — Giữ giọng nói, lưu câu chuyện</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#26312c;background:#f7f3ed}*{box-sizing:border-box}
+body{margin:0}main{max-width:850px;margin:auto;padding:22px}header{padding:18px 0;display:flex;justify-content:space-between;align-items:center}
+.brand{font-weight:800;font-size:20px}.pill{font-size:12px;background:#e5e9df;border-radius:24px;padding:6px 12px}
+.hero{background:#e4eade;padding:36px 28px;border-radius:22px}h1{font-size:clamp(28px,5vw,48px);line-height:1.15;margin:8px 0}h2{font-size:22px}p{line-height:1.65}
+.card{background:white;border:1px solid #e5e2da;padding:25px;border-radius:18px;margin:20px 0}
+button,.button{background:#214e3b;color:white;border:0;border-radius:10px;padding:12px 17px;font-weight:650;cursor:pointer}
+button.secondary{background:#ecefe9;color:#24342b}button:disabled{opacity:.5;cursor:not-allowed}.consent{display:flex;gap:10px;align-items:flex-start;font-weight:400}.consent input{width:auto;margin:5px 0 0}.danger{color:#8b2424}
+input,textarea,select{font:inherit;border:1px solid #d4d8d1;border-radius:9px;padding:12px;width:100%;margin:6px 0 14px}
+textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.muted{color:#65726a;font-size:14px}
+#status{min-height:24px}.warning{background:#fff3da;border-radius:9px;padding:12px}
+.print-only{display:none}@media print{@page{margin:18mm}header,.hero,.controls,.privacy,button,audio,.record-section,.story-editor,.no-print,footer{display:none!important}body{background:white;color:black}main{padding:0;max-width:none}.print-only{display:block}.print-only h1{font-size:26pt;overflow-wrap:anywhere}.print-only .narrator{font-size:12pt;color:#555}.print-only .story-body{font-size:12pt;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}.card{border:0;padding:0}}
+</style></head><body><main>
+<header><span class="brand">BuiTai Heritage</span><div class="row"><button class="secondary" id="lang-vi" type="button" aria-pressed="true">Tiếng Việt</button><button class="secondary" id="lang-en" type="button" aria-pressed="false">English</button><span class="pill" data-i18n="demo">Bản demo nội bộ · Chưa bán hàng</span></div></header>
+<section class="hero"><div class="pill" style="display:inline-block" data-i18n="audience">Dành cho gia đình Việt tại Úc</div>
+<h1 data-i18n="hero">Giữ giọng nói hôm nay. Lưu câu chuyện cho mai sau.</h1>
+<p data-i18n="intro">Mời cha mẹ, ông bà kể một kỷ niệm bằng giọng nói thật. Lưu bản ghi và viết lại một chương hồi ký đầu tiên — ngay trên thiết bị của bạn.</p></section>
+<section class="card record-section">
+<h2 data-i18n="step1">1. Chọn câu hỏi để bắt đầu</h2>
+<label for="prompt" data-i18n="promptLabel">Gợi ý kể chuyện</label>
+<select id="prompt">
+<option>Ngày xưa ông/bà lớn lên ở đâu? Kỷ niệm tuổi thơ nào nhớ nhất?</option>
+<option>Lần đầu ông và bà gặp nhau như thế nào?</option>
+<option>Ngày đầu tiên đi làm, ông/bà đã trải qua những gì?</option>
+<option>Có bài học nào ông/bà muốn để lại cho con cháu?</option>
+<option>Ông/bà nhớ quê hương và ngôi nhà ngày xưa như thế nào?</option>
+<option>Ông/bà đã trải qua ngày rời quê hoặc chuyển đến nơi ở mới ra sao?</option>
+<option>Có câu chuyện nào về gia đình mà ông/bà muốn thế hệ sau biết?</option>
+<option>Tết hồi xưa trong gia đình mình có gì đặc biệt?</option></select>
+<p id="question" class="warning"></p>
+<label class="consent"><input type="checkbox" id="consent" aria-describedby="consent-note"> <span data-i18n="consent">Tôi là người kể hoặc đang hỗ trợ người kể, và xác nhận người kể đã hiểu và đồng ý ghi âm cho mục đích lưu giữ kỷ niệm gia đình. Người kể có thể dừng bất cứ lúc nào.</span></label><p class="muted" id="consent-note" data-i18n="consentNote">Bản demo không kiểm chứng danh tính hoặc lưu bằng chứng đồng ý. Không được ghi âm người khác khi họ chưa đồng ý.</p><div class="row controls"><button id="start" data-i18n="start" disabled>Bắt đầu ghi âm</button><button id="stop" class="secondary" data-i18n="stop" disabled>Dừng ghi</button><button id="download" class="secondary" data-i18n="download" disabled>Tải âm thanh</button><button id="discard" class="secondary" data-i18n="discard" disabled>Xóa bản ghi khỏi phiên này</button></div>
+<p id="status" class="muted" aria-live="polite">Chưa ghi âm.</p><audio controls id="playback" style="width:100%;display:none"></audio>
+</section>
+<section class="card story-editor">
+<h2 data-i18n="step2">2. Viết lại câu chuyện (bản nháp)</h2>
+<p class="muted">Phiên bản demo chưa tự chuyển giọng nói thành văn bản hoặc dùng AI. Gia đình có thể chép lời thủ công và lưu thành tài liệu in được.</p>
+<label for="story-title" data-i18n="storyTitle">Tiêu đề câu chuyện</label><input id="story-title" value="Một kỷ niệm của gia đình">
+<label for="story" data-i18n="storyLabel">Lời kể đã xác nhận</label><textarea id="story" placeholder="Nhập hoặc dán nội dung câu chuyện bằng tiếng Việt. Không thêm điều người kể chưa xác nhận."></textarea>
+<label for="byline" data-i18n="bylineLabel">Người kể (tùy chọn)</label><input id="byline" placeholder="Ví dụ: Bà ngoại">
+<div class="row controls"><button id="print" data-i18n="print">In hoặc lưu thành PDF</button><button id="text" class="secondary" data-i18n="text">Tải nội dung .txt</button></div>
+<p class="muted">Đây là sản phẩm mẫu kiểm tra luồng sử dụng. Bản sách song ngữ và QR riêng tư sẽ được phát triển sau khi kiểm chứng.</p>
+</section>
+<section class="card no-print" aria-label="Transcript review demo">
+<h2 data-i18n="reviewHeading">3. Duyệt bản chép lời (thử nghiệm)</h2>
+<p class="muted" data-i18n="reviewDisclaimer">Công cụ bên dưới chỉ dùng dữ liệu giả. Bản ghi và câu chuyện bạn nhập ở trang này KHÔNG được chuyển sang công cụ duyệt. Chưa có AI chép lời.</p>
+<p><a id="open-transcript-review" href="./transcript-review.html" data-i18n="reviewLink">Mở giao diện duyệt transcript giả lập →</a></p>
+</section>
+<article id="print-story" class="print-only" aria-hidden="true"><h1 id="print-title"></h1><p class="narrator" id="print-byline"></p><div class="story-body" id="print-body"></div></article>
+<section class="card privacy"><h2 data-i18n="privacy">Riêng tư ngay từ đầu</h2><p>Trang demo này không gửi âm thanh hoặc câu chuyện lên máy chủ. Bản ghi chỉ tồn tại trong phiên trình duyệt hiện tại cho đến khi bạn tải về. Đóng hoặc tải lại trang có thể làm mất dữ liệu chưa lưu.</p>
+<p class="warning">Chỉ ghi âm khi người kể hiểu mục đích và đồng ý. Đừng ghi các dữ liệu cá nhân nhạy cảm để thử nghiệm.</p></section>
+<footer class="muted">BuiTai Heritage · Proof of concept · Không xử lý AI, không thanh toán, không lưu trữ đám mây</footer>
+</main><script>
+const $=id=>document.getElementById(id), question=$('question');
+function update(){question.textContent=$('prompt').value} $('prompt').addEventListener('change',update);update();
+
+const translations={
+vi:{demo:"Bản demo nội bộ · Chưa bán hàng",audience:"Dành cho gia đình Việt tại Úc",hero:"Giữ giọng nói hôm nay. Lưu câu chuyện cho mai sau.",intro:"Mời cha mẹ, ông bà kể một kỷ niệm bằng giọng nói thật. Lưu bản ghi và viết lại một chương hồi ký đầu tiên — ngay trên thiết bị của bạn.",step1:"1. Chọn câu hỏi để bắt đầu",promptLabel:"Gợi ý kể chuyện",consent:"Tôi là người kể hoặc đang hỗ trợ người kể, và xác nhận người kể đã hiểu và đồng ý ghi âm cho mục đích lưu giữ kỷ niệm gia đình. Người kể có thể dừng bất cứ lúc nào.",consentNote:"Bản demo không kiểm chứng danh tính hoặc lưu bằng chứng đồng ý. Không được ghi âm người khác khi họ chưa đồng ý.",start:"Bắt đầu ghi âm",stop:"Dừng ghi",download:"Tải âm thanh",discard:"Xóa bản ghi khỏi phiên này",step2:"2. Viết lại câu chuyện (bản nháp)",storyTitle:"Tiêu đề câu chuyện",storyLabel:"Lời kể đã xác nhận",bylineLabel:"Người kể (tùy chọn)",print:"In hoặc lưu thành PDF",text:"Tải nội dung .txt",privacy:"Riêng tư ngay từ đầu",reviewHeading:"3. Duyệt bản chép lời (thử nghiệm)",reviewDisclaimer:"Công cụ bên dưới chỉ dùng dữ liệu giả. Bản ghi và câu chuyện bạn nhập ở trang này KHÔNG được chuyển sang công cụ duyệt. Chưa có AI chép lời.",reviewLink:"Mở giao diện duyệt transcript giả lập →"},
+en:{demo:"Internal demo · Not for sale",audience:"For Vietnamese families in Australia",hero:"Preserve their voice today. Keep their stories for tomorrow.",intro:"Invite your parents or grandparents to share a memory in their own voice. Save the recording and draft a memoir chapter on your device.",step1:"1. Choose a question to begin",promptLabel:"Conversation prompts",consent:"I am the storyteller or assisting them. I confirm the storyteller understands and agrees to be recorded for preserving family memories. They can stop at any time.",consentNote:"This demo does not verify identity or retain proof of consent. Never record anyone without permission.",start:"Start recording",stop:"Stop recording",download:"Download audio",discard:"Discard this recording",step2:"2. Write the story (draft)",storyTitle:"Story title",storyLabel:"Verified story",bylineLabel:"Storyteller (optional)",print:"Print or save PDF",text:"Download .txt",privacy:"Private by design",reviewHeading:"3. Transcript review (prototype)",reviewDisclaimer:"This separate tool uses synthetic data only. Audio and text entered on this page are NOT transferred to the review tool. There is no live speech-to-text AI.",reviewLink:"Open synthetic transcript review →"}};
+
+const dynamicMessages={
+vi:{idle:"Chưa ghi âm.",recording:"Đang ghi âm...",finished:"Đã ghi xong. Hãy tải âm thanh để không mất dữ liệu.",discarded:"Đã xóa bản ghi khỏi phiên trình duyệt này. File đã tải về (nếu có) không bị xóa.",error:"Không thể ghi âm: ",empty:"Không có âm thanh được ghi. Hãy thử lại.",stopped:"Đã dừng và xóa bản ghi trong phiên vì người kể rút lại sự đồng ý.",recordError:"Lỗi ghi âm. Hãy thử lại.",unsupported:"Trình duyệt không hỗ trợ ghi âm hoặc trang chưa chạy trên HTTPS/localhost."},
+en:{idle:"Not recording.",recording:"Recording...",finished:"Recording finished. Download your audio to avoid losing it.",discarded:"Recording removed from this browser session. Any downloaded file remains on your device.",error:"Could not record: ",empty:"No audio was recorded. Please try again.",stopped:"Recording stopped and the session audio discarded because consent was withdrawn.",recordError:"Recording failed. Please try again.",unsupported:"Recording is not supported in this browser or this page is not running over HTTPS/localhost."}
+};
+let statusKey="idle",statusDetail="";
+function status(key,detail=""){statusKey=key;statusDetail=detail;document.getElementById('status').textContent=dynamicMessages[locale][key]+detail;}
+
+const promptsEn=["Where did you grow up? What is your favourite childhood memory?","How did you and your partner first meet?","What do you remember about your first job?","What lesson would you like to pass on to the next generation?","What do you remember about your hometown and childhood home?","What was it like when you moved away from home?","Which family story would you like future generations to know?","What was Lunar New Year like in your family when you were young?"];
+const promptsVi=Array.from(document.querySelectorAll('#prompt option')).map(x=>x.textContent);
+const englishOnly=[
+['2. Viết lại câu chuyện (bản nháp)','2. Write the story (draft)'],
+['Phiên bản demo chưa tự chuyển giọng nói thành văn bản hoặc dùng AI. Gia đình có thể chép lời thủ công và lưu thành tài liệu in được.','This demo does not yet transcribe speech or use AI. You can type the transcript and save a printable document.'],
+['Đây là sản phẩm mẫu kiểm tra luồng sử dụng. Bản sách song ngữ và QR riêng tư sẽ được phát triển sau khi kiểm chứng.','This is a workflow prototype. Bilingual books and private audio links are not yet available.'],
+['Trang demo này không gửi âm thanh hoặc câu chuyện lên máy chủ. Bản ghi chỉ tồn tại trong phiên trình duyệt hiện tại cho đến khi bạn tải về. Đóng hoặc tải lại trang có thể làm mất dữ liệu chưa lưu.','This demo does not send audio or stories to a server. Recordings stay in this browser session until you download them; reloading may lose unsaved work.'],
+['Chỉ ghi âm khi người kể hiểu mục đích và đồng ý. Đừng ghi các dữ liệu cá nhân nhạy cảm để thử nghiệm.','Record only with the storyteller’s informed consent. Avoid sensitive personal information during testing.'],
+['BuiTai Heritage · Proof of concept · Không xử lý AI, không thanh toán, không lưu trữ đám mây','BuiTai Heritage · Proof of concept · No AI, payments or cloud storage']
+];
+const transNodes=englishOnly.map(([vi,en])=>({node:Array.from(document.querySelectorAll('p,footer')).find(n=>n.textContent.trim()===vi),vi,en}));
+let locale='vi';
+function applyLanguage(next){
+locale=next;document.documentElement.lang=next;
+document.querySelectorAll('[data-i18n]').forEach(node=>node.textContent=translations[next][node.dataset.i18n]);
+const selector=document.getElementById('prompt'),index=selector.selectedIndex;
+Array.from(selector.options).forEach((node,i)=>node.textContent=(next==='vi'?promptsVi:promptsEn)[i]);
+selector.selectedIndex=index;update();status(statusKey,statusDetail);
+document.getElementById("story").placeholder=next==="vi"?"Nhập hoặc dán nội dung câu chuyện bằng tiếng Việt. Không thêm điều người kể chưa xác nhận.":"Type or paste the verified story. Do not invent details.";
+document.getElementById("byline").placeholder=next==="vi"?"Ví dụ: Bà ngoại":"For example: Grandma";
+transNodes.forEach(x=>{if(x.node)x.node.textContent=next==='vi'?x.vi:x.en;});
+document.getElementById('lang-vi').setAttribute('aria-pressed',String(next==='vi'));
+document.getElementById('lang-en').setAttribute('aria-pressed',String(next==='en'));
+}
+document.getElementById('lang-vi').onclick=()=>applyLanguage('vi');
+document.getElementById('lang-en').onclick=()=>applyLanguage('en');
+
+let recorder=null, stream=null, parts=[], recordingUrl=null, lastBlob=null, busy=false, withdrawn=false, finalizing=false;
+const consent=$('consent');
+consent.addEventListener('change',()=>{if(!consent.checked){if(recorder&&recorder.state==='recording'){withdrawn=true;finalizing=true;recorder.stop();$('stop').disabled=true;}discard();status('stopped');}if(!recorder||recorder.state!=='recording')$('start').disabled=!consent.checked||busy||finalizing;});
+function releaseMic(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
+function discard(){lastBlob=null;parts=[];if(recordingUrl){URL.revokeObjectURL(recordingUrl);recordingUrl=null;}$('playback').pause();$('playback').removeAttribute('src');$('playback').load();$('playback').style.display='none';$('download').disabled=true;$('discard').disabled=true;}
+$('discard').onclick=()=>{if(recorder&&recorder.state==='recording')return;discard();status('discarded');};
+window.addEventListener('pagehide',releaseMic);
+$('start').onclick=async()=>{
+if(busy||finalizing||!consent.checked)return;
+busy=true;$('start').disabled=true;
+try{
+if(!navigator.mediaDevices||!window.MediaRecorder){throw Error(dynamicMessages[locale].unsupported)}
+stream=await navigator.mediaDevices.getUserMedia({audio:true});if(!consent.checked){releaseMic();return;}discard();withdrawn=false;parts=[];
+recorder=new MediaRecorder(stream);
+recorder.ondataavailable=e=>{if(e.data.size)parts.push(e.data)};
+recorder.onerror=()=>{withdrawn=true;discard();status('recordError');$('stop').disabled=true;if(recorder.state==='recording'){finalizing=true;try{recorder.stop();}catch(e){finalizing=false;releaseMic();}}else{finalizing=false;releaseMic();}$('start').disabled=finalizing||!consent.checked;};
+recorder.onstop=()=>{
+ const type=recorder.mimeType||'audio/webm';const blob=new Blob(parts,{type});releaseMic();finalizing=false;$('start').disabled=!consent.checked;if(withdrawn){discard();if(statusKey!=='recordError')status('stopped');return;}
+ if(!consent.checked){discard();status('stopped');return;}
+ if(!blob.size){status('empty');return;}
+ lastBlob=blob;recordingUrl=URL.createObjectURL(blob);
+ $('playback').src=recordingUrl;$('playback').style.display='block';
+ $('download').disabled=false;$('discard').disabled=false;status('finished');
+};
+$('download').onclick=()=>{if(!lastBlob)return;const type=lastBlob.type;save(lastBlob,'buitai-heritage-recording.'+(type.includes('mp4')?'m4a':type.includes('ogg')?'ogg':'webm'));};
+recorder.start();$('stop').disabled=false;$('download').disabled=true;
+status('recording');
+}catch(e){releaseMic();$('stop').disabled=true;status('error',e.message);}finally{busy=false;if(!recorder||recorder.state!=='recording')$('start').disabled=!consent.checked;}
+};
+$('stop').onclick=()=>{if(recorder&&recorder.state==='recording'){finalizing=true;recorder.stop();}$('stop').disabled=true;$('start').disabled=true;};
+function save(blob,name){const a=document.createElement('a');const u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+function syncPrint(){ $('print-title').textContent=$('story-title').value.trim()|| (locale==='vi'?'Câu chuyện gia đình':'Family Story');$('print-byline').textContent=$('byline').value.trim();$('print-body').textContent=$('story').value.trim()||(locale==='vi'?'(Chưa nhập nội dung)':'(No story entered)');}
+$('print').onclick=()=>{syncPrint();window.print();};
+window.addEventListener('beforeprint',syncPrint);
+$('text').onclick=()=>save(new Blob([$('story-title').value+'\n'+$('byline').value+'\n\n'+$('story').value],{type:'text/plain;charset=utf-8'}),'buitai-heritage-story.txt');
+</script></body></html>
