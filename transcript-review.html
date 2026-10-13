@@ -1,0 +1,29 @@
+<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Heritage · Transcript Review (synthetic demo)</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#1b2b3c;background:#f8f8f5}main{max-width:850px;margin:40px auto;padding:24px;background:white;border:1px solid #ddd;border-radius:18px}h1{margin-bottom:0}p{line-height:1.5}.note{padding:12px;background:#fff4dd;border-radius:8px}article{border-top:1px solid #ddd;padding:16px 0}textarea{display:block;width:100%;box-sizing:border-box;padding:12px;font:inherit;min-height:75px}button{padding:10px 14px;margin:5px 6px 5px 0;border:1px solid #aaa;border-radius:8px;background:#fff;cursor:pointer}button:disabled{opacity:.4}label{display:block;margin:14px 0}small{color:#475569}#approval{font-weight:650} 
+</style>
+<main>
+<h1 id="heading">Duyệt bản chép lời · Heritage</h1>
+<p class="note" id="notice">Bản demo sử dụng dữ liệu giả. Không tải lên máy chủ, không ghi âm, không có AI thật.</p>
+<button id="vi">Tiếng Việt</button><button id="en">English</button>
+<p id="description">Nghe lại lời kể gốc (ở sản phẩm chính thức), sửa từng đoạn rồi phê duyệt bản chép lời. Thay đổi sẽ hủy phê duyệt trước đó.</p>
+<section id="segments"></section>
+<label><input type="checkbox" id="review"/> <span id="reviewLabel">Tôi đã kiểm tra các đoạn và xác nhận nội dung chính xác với bản ghi gốc.</span></label>
+<button id="approve" disabled>Phê duyệt transcript</button><button id="reset">Hủy phê duyệt</button><button id="export">Xuất JSON trên máy</button>
+<p id="approval" role="status" aria-live="polite">Chưa phê duyệt</p>
+</main><script>
+const sample=[{id:'s1',startMs:0,endMs:3200,text:'Ngày xưa, nhà tôi ở gần một con sông.'},{id:'s2',startMs:3200,endMs:6900,text:'Mỗi mùa Tết, cả nhà lại quây quần với nhau.'}];
+const source=structuredClone(sample);let segments=structuredClone(sample),approved=false,lang='vi';
+const $=id=>document.getElementById(id);
+const strings={vi:{heading:'Duyệt bản chép lời · Heritage',notice:'Bản demo sử dụng dữ liệu giả. Không tải lên máy chủ, không ghi âm, không có AI thật.',description:'Nghe lại lời kể gốc (ở sản phẩm chính thức), sửa từng đoạn rồi phê duyệt bản chép lời. Thay đổi sẽ hủy phê duyệt trước đó.',review:'Tôi đã kiểm tra các đoạn và xác nhận nội dung chính xác với bản ghi gốc.',approve:'Phê duyệt transcript',reset:'Hủy phê duyệt',export:'Xuất JSON trên máy',pending:'Chưa phê duyệt',done:'Đã phê duyệt trên trình duyệt (không có xác thực danh tính).',segment:'Đoạn',original:'Bản giả lập nguồn',edited:'Bản đã chỉnh sửa'},en:{heading:'Transcript review · Heritage',notice:'Synthetic data only. No server upload, recording or live AI.',description:'Compare original audio (in the future product), edit segments and approve the transcript. Further edits invalidate approval.',review:'I checked each segment against the original audio and confirm accuracy.',approve:'Approve transcript',reset:'Revoke approval',export:'Export JSON locally',pending:'Not approved',done:'Approved in this browser (no identity verification).',segment:'Segment',original:'Synthetic source text',edited:'Edited transcript'}};
+function revoke(){approved=false;$('review').checked=false;renderStatus();}
+function renderStatus(){$('approval').textContent=approved?strings[lang].done:strings[lang].pending;$('approve').disabled=approved||!$('review').checked||segments.some(s=>!s.text.trim());}
+function render(){const t=strings[lang];document.documentElement.lang=lang;for(const id of ['heading','notice','description'])$(id).textContent=t[id];$('reviewLabel').textContent=t.review;for(const id of ['approve','reset','export'])$(id).textContent=t[id];const root=$('segments');root.replaceChildren();segments.forEach((segment,i)=>{const block=document.createElement('article');const heading=document.createElement('h2');heading.textContent=t.segment+' '+(i+1)+' · '+(segment.startMs/1000).toFixed(1)+'–'+(segment.endMs/1000).toFixed(1)+'s';const original=document.createElement('small');original.textContent=t.original+': '+source[i].text;const field=document.createElement('textarea');field.setAttribute('aria-label',t.edited+' '+(i+1));field.value=segment.text;field.addEventListener('input',()=>{segment.text=field.value;revoke()});block.append(heading,original,field);root.append(block)});renderStatus();}
+$('review').addEventListener('change',renderStatus);
+$('approve').addEventListener('click',()=>{if(!$('review').checked||segments.some(x=>!x.text.trim()))return;approved=true;renderStatus();});
+$('reset').addEventListener('click',revoke);
+$('vi').addEventListener('click',()=>{lang='vi';render();});$('en').addEventListener('click',()=>{lang='en';render();});
+$('export').addEventListener('click',()=>{const payload={schemaVersion:'demo-transcript-0.1',synthetic:true,approved,segments:segments.map(s=>({...s}))};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='heritage-synthetic-transcript.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+render();
+</script></html>
