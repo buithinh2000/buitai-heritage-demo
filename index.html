@@ -42,7 +42,7 @@ textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
 <label for="transcript-draft" id="manual-transcript-label">Nội dung bản chép lời</label>
 <textarea id="transcript-draft" placeholder="Nghe bản ghi và chép lại lời kể ở đây."></textarea>
 <label class="consent"><input type="checkbox" id="transcript-reviewed"><span id="manual-review-label">Tôi đã tự đối chiếu với giọng kể gốc và xác nhận bản chép lời đúng.</span></label>
-<div class="row controls"><button id="transcript-approve" type="button" disabled>Phê duyệt bản chép lời</button><button id="transcript-to-story" class="secondary" type="button" disabled>Đưa vào bản hồi ký</button></div>
+<div class="row controls"><button id="transcript-approve" type="button" disabled>Phê duyệt bản chép lời</button><button id="transcript-to-story" class="secondary" type="button" disabled>Đưa vào bản hồi ký</button><button id="transcript-export" class="secondary" type="button" disabled>Tải bản chép lời .txt</button></div>
 <p id="transcript-review-status" class="muted" role="status" aria-live="polite">Chưa được phê duyệt.</p>
 </section>
 <section class="card story-editor">
@@ -61,7 +61,7 @@ textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
 </section>
 <article id="print-story" class="print-only" aria-hidden="true"><h1 id="print-title"></h1><p class="narrator" id="print-byline"></p><div class="story-body" id="print-body"></div></article>
 <section class="card privacy"><h2 data-i18n="privacy">Riêng tư ngay từ đầu</h2><p>Trang demo này không gửi âm thanh hoặc câu chuyện lên máy chủ. Bản ghi chỉ tồn tại trong phiên trình duyệt hiện tại cho đến khi bạn tải về. Đóng hoặc tải lại trang có thể làm mất dữ liệu chưa lưu.</p>
-<p class="warning">Chỉ ghi âm khi người kể hiểu mục đích và đồng ý. Đừng ghi các dữ liệu cá nhân nhạy cảm để thử nghiệm.</p></section>
+<p class="warning">Chỉ ghi âm khi người kể hiểu mục đích và đồng ý. Đừng ghi các dữ liệu cá nhân nhạy cảm để thử nghiệm.</p><p class="muted" id="leave-warning">Trình duyệt có thể cảnh báo khi rời trang, nhưng một số điện thoại không hiển thị cảnh báo. Hãy tải âm thanh và nội dung về máy trước khi đóng.</p></section>
 <footer class="muted">BuiTai Heritage · Proof of concept · Không xử lý AI, không thanh toán, không lưu trữ đám mây</footer>
 </main><script>
 const $=id=>document.getElementById(id), question=$('question');
@@ -137,16 +137,29 @@ status('recording');
 $('stop').onclick=()=>{if(recorder&&recorder.state==='recording'){finalizing=true;recorder.stop();}$('stop').disabled=true;$('start').disabled=true;};
 function save(blob,name){const a=document.createElement('a');const u=URL.createObjectURL(blob);a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 const reviewUi={
- vi:{title:'2. Chép lời và phê duyệt (thủ công)',note:'Nghe lại bản ghi rồi tự chép lời. Trang không có AI, không xác minh nội dung với âm thanh và không lưu lên máy chủ.',label:'Nội dung bản chép lời',review:'Tôi đã tự đối chiếu với giọng kể gốc và xác nhận bản chép lời đúng.',approve:'Phê duyệt bản chép lời',transfer:'Đưa vào bản hồi ký',pending:'Chưa được phê duyệt.',accepted:'Đã xác nhận thủ công trên thiết bị này (không xác minh danh tính).',copied:'Đã đưa lời kể vào bản nháp hồi ký. Bản nháp vẫn cần kiểm tra.'},
- en:{title:'2. Review transcript (manual)',note:'Listen to your recording and type the words yourself. No AI, audio verification or server storage.',label:'Transcript text',review:'I manually compared the text with the original recording and confirm its accuracy.',approve:'Approve transcript',transfer:'Copy to memoir draft',pending:'Not approved.',accepted:'Manually approved on this device (identity not verified).',copied:'Copied into memoir draft. The memoir still needs review.'}
+ vi:{title:'2. Chép lời và phê duyệt (thủ công)',note:'Nghe lại bản ghi rồi tự chép lời. Trang không có AI, không xác minh nội dung với âm thanh và không lưu lên máy chủ.',label:'Nội dung bản chép lời',review:'Tôi đã tự đối chiếu với giọng kể gốc và xác nhận bản chép lời đúng.',approve:'Phê duyệt bản chép lời',transfer:'Đưa vào bản hồi ký',export:'Tải bản chép lời .txt',leave:'Trình duyệt có thể cảnh báo khi rời trang, nhưng một số điện thoại không hiển thị cảnh báo. Hãy tải âm thanh và nội dung về máy trước khi đóng.',pending:'Chưa được phê duyệt.',accepted:'Đã xác nhận thủ công trên thiết bị này (không xác minh danh tính).',copied:'Đã đưa lời kể vào bản nháp hồi ký. Bản nháp vẫn cần kiểm tra.'},
+ en:{title:'2. Review transcript (manual)',note:'Listen to your recording and type the words yourself. No AI, audio verification or server storage.',label:'Transcript text',review:'I manually compared the text with the original recording and confirm its accuracy.',approve:'Approve transcript',transfer:'Copy to memoir draft',export:'Download transcript .txt',leave:'Some browsers warn when leaving, but mobile phones may not. Download audio and text before closing.',pending:'Not approved.',accepted:'Manually approved on this device (identity not verified).',copied:'Copied into memoir draft. The memoir still needs review.'}
 };
 let transcriptApproved=false,transcriptStatus='pending';
-function renderTranscript(){const t=reviewUi[locale];for(const [id,v] of [['manual-transcript-title',t.title],['manual-transcript-note',t.note],['manual-transcript-label',t.label],['manual-review-label',t.review],['transcript-approve',t.approve],['transcript-to-story',t.transfer]])$(id).textContent=v;$('transcript-review-status').textContent=t[transcriptStatus];$('transcript-approve').disabled=transcriptApproved||!$('transcript-reviewed').checked||!$('transcript-draft').value.trim();$('transcript-to-story').disabled=!transcriptApproved;}
+function renderTranscript(){const t=reviewUi[locale];for(const [id,v] of [['manual-transcript-title',t.title],['manual-transcript-note',t.note],['manual-transcript-label',t.label],['manual-review-label',t.review],['transcript-approve',t.approve],['transcript-to-story',t.transfer],['transcript-export',t.export],['leave-warning',t.leave]])$(id).textContent=v;$('transcript-review-status').textContent=t[transcriptStatus];$('transcript-approve').disabled=transcriptApproved||!$('transcript-reviewed').checked||!$('transcript-draft').value.trim();$('transcript-to-story').disabled=!transcriptApproved;$('transcript-export').disabled=!$('transcript-draft').value.trim();}
 function revokeTranscript(){transcriptApproved=false;transcriptStatus='pending';$('transcript-reviewed').checked=false;renderTranscript();}
 $('transcript-draft').addEventListener('input',revokeTranscript);
 $('transcript-reviewed').addEventListener('change',()=>{if(!$('transcript-reviewed').checked)revokeTranscript();else renderTranscript();});
 $('transcript-approve').addEventListener('click',()=>{if(!$('transcript-reviewed').checked||!$('transcript-draft').value.trim())return;transcriptApproved=true;transcriptStatus='accepted';renderTranscript();});
 $('transcript-to-story').addEventListener('click',()=>{if(!transcriptApproved||!$('transcript-reviewed').checked)return;const draft=$('transcript-draft').value;if(!draft.trim())return;if($('story').value.trim()&&!window.confirm(locale==='vi'?'Thay thế bản hồi ký đang nhập?':'Replace your current memoir draft?'))return;$('story').value=draft;transcriptStatus='copied';renderTranscript();$('story').focus();});
+$('transcript-export').addEventListener('click',()=>{
+ const draft=$('transcript-draft').value;
+ if(!draft.trim())return;
+ const state=transcriptApproved?(locale==='vi'?'Đã phê duyệt thủ công trên thiết bị, chưa xác thực danh tính':'Manually approved on this device, identity not verified'):(locale==='vi'?'BẢN NHÁP — CHƯA PHÊ DUYỆT':'DRAFT — NOT APPROVED');
+ save(new Blob([state+'\n\n'+draft],{type:'text/plain;charset=utf-8'}),'buitai-heritage-transcript.txt');
+});
+window.addEventListener('beforeunload',event=>{
+ const activeAudio=lastBlob||(recorder&&recorder.state==='recording');
+ if(activeAudio||$('transcript-draft').value.trim()||$('story').value.trim()){
+  event.preventDefault();
+  event.returnValue='';
+ }
+});
 const oldLanguageApply=applyLanguage;applyLanguage=function(next){oldLanguageApply(next);renderTranscript();};
 renderTranscript();
 function syncPrint(){ $('print-title').textContent=$('story-title').value.trim()|| (locale==='vi'?'Câu chuyện gia đình':'Family Story');$('print-byline').textContent=$('byline').value.trim();$('print-body').textContent=$('story').value.trim()||(locale==='vi'?'(Chưa nhập nội dung)':'(No story entered)');}
