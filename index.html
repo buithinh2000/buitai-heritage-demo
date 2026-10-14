@@ -47,6 +47,7 @@ textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
 </section>
 <section class="card story-editor">
 <h2 data-i18n="step2">3. Biên tập câu chuyện (bản nháp)</h2>
+<p id="sample-active-notice" class="warning" role="status" aria-live="polite" hidden>Đang xem câu chuyện mẫu hư cấu — không phải ký ức hoặc lời kể đã xác nhận.</p>
 <p class="muted">Phiên bản demo chưa tự chuyển giọng nói thành văn bản hoặc dùng AI. Gia đình có thể chép lời thủ công và lưu thành tài liệu in được.</p>
 <label for="story-title" data-i18n="storyTitle">Tiêu đề câu chuyện</label><input id="story-title" value="Một kỷ niệm của gia đình">
 <label for="story" data-i18n="storyLabel">Lời kể đã xác nhận</label><textarea id="story" placeholder="Nhập hoặc dán nội dung câu chuyện bằng tiếng Việt. Không thêm điều người kể chưa xác nhận."></textarea>
@@ -91,7 +92,7 @@ const englishOnly=[
 const transNodes=englishOnly.map(([vi,en])=>({node:Array.from(document.querySelectorAll('p,footer')).find(n=>n.textContent.trim()===vi),vi,en}));
 let locale='vi';
 function applyLanguage(next){
-locale=next;document.documentElement.lang=next;$('sample-story').textContent=translations[next].sampleStory;$('sample-notice').textContent=translations[next].sampleNotice;
+locale=next;document.documentElement.lang=next;$('sample-story').textContent=translations[next].sampleStory;$('sample-notice').textContent=translations[next].sampleNotice;updateSampleBadge();
 document.querySelectorAll('[data-i18n]').forEach(node=>node.textContent=translations[next][node.dataset.i18n]);
 const selector=document.getElementById('prompt'),index=selector.selectedIndex;
 Array.from(selector.options).forEach((node,i)=>node.textContent=(next==='vi'?promptsVi:promptsEn)[i]);
@@ -103,6 +104,8 @@ document.getElementById('lang-vi').setAttribute('aria-pressed',String(next==='vi
 document.getElementById('lang-en').setAttribute('aria-pressed',String(next==='en'));
 }
 document.getElementById('lang-vi').onclick=()=>applyLanguage('vi');
+let sampleActive=false;
+function updateSampleBadge(){const node=$('sample-active-notice');node.hidden=!sampleActive;node.textContent=locale==='vi'?'Đang xem câu chuyện mẫu hư cấu — không phải ký ức hoặc lời kể đã xác nhận.':'Showing a fictional demo story — not a real memory or verified narration.';}
 const sampleMemoir={
  vi:{title:'Một mùa Tết tưởng tượng',byline:'Nhân vật hư cấu — chỉ dùng thử',body:'Một sáng cuối năm, căn nhà nhỏ trong câu chuyện tưởng tượng này thơm mùi lá dong và bánh mới. Mọi người cùng dọn bàn, kể những câu chuyện vui và chuẩn bị đón năm mới.\n\nCậu bé trong truyện nhớ nhất khoảnh khắc cả gia đình ngồi lại bên nhau. Không ai vội vàng; tiếng cười vang ngoài sân.\n\nĐây là truyện mẫu do BuiTai tạo để thử giao diện. Không phải ký ức thật và không được xem là lời kể đã được xác nhận.'},
  en:{title:'An imaginary Lunar New Year',byline:'Fictional character — demo only',body:'One year-end morning in this imaginary story, a little home smelled of fresh leaves and festive food. Everyone tidied the table and looked forward to the New Year.\n\nThe child in the story remembered the moment the whole family sat together. Nobody was in a hurry, and laughter filled the courtyard.\n\nThis is fictional sample text for testing the BuiTai interface. It is not a real memory or a verified narrator transcript.'}
@@ -112,7 +115,9 @@ function loadSampleMemoir(){
  if(existing&&!window.confirm(locale==='vi'?'Thay nội dung hồi ký đang nhập bằng dữ liệu mẫu hư cấu?':'Replace your current memoir with fictional sample text?'))return;
  const example=sampleMemoir[locale];
  $('story-title').value=example.title;$('byline').value=example.byline;$('story').value=example.body;
- $('story').focus();$('story').scrollIntoView({behavior:'auto',block:'center'});
+ sampleActive=true;updateSampleBadge();
+ // Avoid focusing the textarea: on iPhone this would unexpectedly open the keyboard.
+ $('sample-active-notice').scrollIntoView({behavior:'auto',block:'center'});
 }
 $('sample-story').addEventListener('click',loadSampleMemoir);
 
@@ -159,7 +164,7 @@ function revokeTranscript(){transcriptApproved=false;transcriptStatus='pending';
 $('transcript-draft').addEventListener('input',revokeTranscript);
 $('transcript-reviewed').addEventListener('change',()=>{if(!$('transcript-reviewed').checked)revokeTranscript();else renderTranscript();});
 $('transcript-approve').addEventListener('click',()=>{if(!$('transcript-reviewed').checked||!$('transcript-draft').value.trim())return;transcriptApproved=true;transcriptStatus='accepted';renderTranscript();});
-$('transcript-to-story').addEventListener('click',()=>{if(!transcriptApproved||!$('transcript-reviewed').checked)return;const draft=$('transcript-draft').value;if(!draft.trim())return;if($('story').value.trim()&&!window.confirm(locale==='vi'?'Thay thế bản hồi ký đang nhập?':'Replace your current memoir draft?'))return;$('story').value=draft;transcriptStatus='copied';renderTranscript();$('story').focus();});
+$('transcript-to-story').addEventListener('click',()=>{if(!transcriptApproved||!$('transcript-reviewed').checked)return;const draft=$('transcript-draft').value;if(!draft.trim())return;if($('story').value.trim()&&!window.confirm(locale==='vi'?'Thay thế bản hồi ký đang nhập?':'Replace your current memoir draft?'))return;$('story').value=draft;sampleActive=false;updateSampleBadge();transcriptStatus='copied';renderTranscript();$('story').focus();});
 $('transcript-export').addEventListener('click',()=>{
  const draft=$('transcript-draft').value;
  if(!draft.trim())return;
