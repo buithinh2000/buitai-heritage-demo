@@ -61,6 +61,42 @@ textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
 <p><a id="open-transcript-review" href="./transcript-review.html" data-i18n="reviewLink">Mở giao diện duyệt transcript giả lập →</a></p>
 </section>
 <article id="print-story" class="print-only" aria-hidden="true"><h1 id="print-title"></h1><p class="narrator" id="print-byline"></p><div class="story-body" id="print-body"></div></article>
+
+<section class="card no-print" id="pilot-feedback">
+<h2 id="feedback-title">5. Góp ý bản demo (1 phút)</h2>
+<p class="muted" id="feedback-intro">Chỉ chọn các câu trả lời có sẵn. Không nhập tên, liên hệ hay chuyện riêng của gia đình. Trang không tự thu thập hoặc gửi phản hồi.</p>
+<label for="feedback-completed" id="feedback-completed-label">Bạn hoàn thành bản hồi ký mẫu được không?</label>
+<select id="feedback-completed">
+<option value="">Chọn câu trả lời</option>
+<option value="yes">Có</option>
+<option value="partial">Một phần</option>
+<option value="no">Không</option>
+</select>
+<label for="feedback-blocker" id="feedback-blocker-label">Khó khăn lớn nhất là gì?</label>
+<select id="feedback-blocker">
+<option value="">Chọn câu trả lời</option>
+<option value="none">Không gặp khó khăn</option>
+<option value="navigation">Khó tìm bước tiếp theo</option>
+<option value="recording">Ghi âm / quyền microphone</option>
+<option value="transcript">Chép lời / phê duyệt</option>
+<option value="export">Tải xuống / PDF</option>
+<option value="privacy">Lo ngại về quyền riêng tư</option>
+<option value="other">Vấn đề khác</option>
+</select>
+<label for="feedback-interest" id="feedback-interest-label">Bạn có muốn dùng sản phẩm hoàn thiện cho gia đình không?</label>
+<select id="feedback-interest">
+<option value="">Chọn câu trả lời</option>
+<option value="yes">Có thể sẽ dùng</option>
+<option value="maybe">Chưa chắc</option>
+<option value="no">Không</option>
+</select>
+<div class="row controls">
+<button type="button" id="feedback-share" disabled>Chia sẻ qua ứng dụng của bạn</button>
+<button type="button" class="secondary" id="feedback-download" disabled>Tải phản hồi .txt</button>
+</div>
+<p class="muted" id="feedback-note">Chia sẻ sẽ mở bảng chọn ứng dụng của điện thoại nếu được hỗ trợ. Bạn quyết định gửi cho ai. Không có người nhận mặc định và không có dữ liệu gia đình được đính kèm.</p>
+<p class="muted" id="feedback-status" role="status" aria-live="polite"></p>
+</section>
 <section class="card privacy"><h2 data-i18n="privacy">Riêng tư ngay từ đầu</h2><p>Trang demo này không gửi âm thanh hoặc câu chuyện lên máy chủ. Bản ghi chỉ tồn tại trong phiên trình duyệt hiện tại cho đến khi bạn tải về. Đóng hoặc tải lại trang có thể làm mất dữ liệu chưa lưu.</p>
 <p class="warning">Chỉ ghi âm khi người kể hiểu mục đích và đồng ý. Đừng ghi các dữ liệu cá nhân nhạy cảm để thử nghiệm.</p><p class="muted" id="leave-warning">Trình duyệt có thể cảnh báo khi rời trang, nhưng một số điện thoại không hiển thị cảnh báo. Hãy tải âm thanh và nội dung về máy trước khi đóng.</p></section>
 <footer class="muted">BuiTai Heritage · Proof of concept · Không xử lý AI, không thanh toán, không lưu trữ đám mây</footer>
@@ -184,4 +220,86 @@ function syncPrint(){ $('print-title').textContent=$('story-title').value.trim()
 $('print').onclick=()=>{syncPrint();window.print();};
 window.addEventListener('beforeprint',syncPrint);
 $('text').onclick=()=>save(new Blob([$('story-title').value+'\n'+$('byline').value+'\n\n'+$('story').value],{type:'text/plain;charset=utf-8'}),'buitai-heritage-story.txt');
+
+const feedbackI18n={
+ vi:{
+  title:'5. Góp ý bản demo (1 phút)',
+  intro:'Chỉ chọn các câu trả lời có sẵn. Không nhập tên, liên hệ hay chuyện riêng của gia đình. Trang không tự thu thập hoặc gửi phản hồi.',
+  completed:'Bạn hoàn thành bản hồi ký mẫu được không?',blocker:'Khó khăn lớn nhất là gì?',
+  interest:'Bạn có muốn dùng sản phẩm hoàn thiện cho gia đình không?',
+  share:'Chia sẻ qua ứng dụng của bạn',download:'Tải phản hồi .txt',
+  note:'Chia sẻ sẽ mở bảng chọn ứng dụng của điện thoại nếu được hỗ trợ. Bạn quyết định gửi cho ai. Không có người nhận mặc định và không có dữ liệu gia đình được đính kèm.',
+  unsupported:'Thiết bị không hỗ trợ chia sẻ trực tiếp. Hãy tải file phản hồi.',
+  error:'Không thể mở chức năng chia sẻ. Bạn có thể tải file phản hồi.',
+  ready:'Bạn có thể chia sẻ hoặc tải phản hồi mà không gửi nội dung gia đình.',
+  complete:['Chọn câu trả lời','Có','Một phần','Không'],
+  blocks:['Chọn câu trả lời','Không gặp khó khăn','Khó tìm bước tiếp theo','Ghi âm / quyền microphone','Chép lời / phê duyệt','Tải xuống / PDF','Lo ngại về quyền riêng tư','Vấn đề khác'],
+  interested:['Chọn câu trả lời','Có thể sẽ dùng','Chưa chắc','Không']
+ },
+ en:{
+  title:'5. Demo feedback (1 minute)',
+  intro:'Choose preset answers only. Do not enter names, contact details or family stories. This page never collects or sends feedback automatically.',
+  completed:'Could you complete the sample memoir?',blocker:'What was your biggest difficulty?',
+  interest:'Would you use the finished product for your family?',
+  share:'Share using your apps',download:'Download feedback .txt',
+  note:'Sharing opens your device app chooser if supported. You choose the recipient. No destination is preselected and no family content is attached.',
+  unsupported:'Direct sharing is unavailable. Please download your feedback file.',
+  error:'Could not open sharing. You can still download the feedback.',
+  ready:'You can share or download your answers without sending any family content.',
+  complete:['Choose an answer','Yes','Partially','No'],
+  blocks:['Choose an answer','No problem','Finding the next step','Recording / microphone','Transcript / approval','Download / PDF','Privacy concern','Something else'],
+  interested:['Choose an answer','Likely','Not sure','No']
+ }
+};
+let feedbackStatus='';
+function updateFeedbackState(){
+ const complete=['feedback-completed','feedback-blocker','feedback-interest'].every(id=>$(id).value);
+ $('feedback-share').disabled=!complete;
+ $('feedback-download').disabled=!complete;
+}
+function renderFeedbackLanguage(){
+ const t=feedbackI18n[locale];
+ for(const [id,value] of [['feedback-title',t.title],['feedback-intro',t.intro],
+ ['feedback-completed-label',t.completed],['feedback-blocker-label',t.blocker],
+ ['feedback-interest-label',t.interest],['feedback-share',t.share],
+ ['feedback-download',t.download],['feedback-note',t.note]])$(id).textContent=value;
+ for(const [id,items] of [['feedback-completed',t.complete],['feedback-blocker',t.blocks],
+ ['feedback-interest',t.interested]]){
+   Array.from($(id).options).forEach((option,i)=>{option.textContent=items[i]});
+ }
+ $('feedback-status').textContent=feedbackStatus?t[feedbackStatus]:'';
+ updateFeedbackState();
+}
+function feedbackText(){
+ return [
+  'BuiTai Heritage — Anonymous demo feedback',
+  'Completion: '+$('feedback-completed').value,
+  'Main blocker: '+$('feedback-blocker').value,
+  'Product interest: '+$('feedback-interest').value,
+  'This feedback contains preset choices only; no audio, transcript or memoir text.'
+ ].join('\n');
+}
+for(const id of ['feedback-completed','feedback-blocker','feedback-interest']){
+ $(id).addEventListener('change',()=>{feedbackStatus='';renderFeedbackLanguage();});
+}
+$('feedback-download').addEventListener('click',()=>{
+ if($('feedback-download').disabled)return;
+ save(new Blob([feedbackText()],{type:'text/plain;charset=utf-8'}),'buitai-heritage-demo-feedback.txt');
+ feedbackStatus='ready';renderFeedbackLanguage();
+});
+$('feedback-share').addEventListener('click',async()=>{
+ if($('feedback-share').disabled)return;
+ if(!navigator.share){feedbackStatus='unsupported';renderFeedbackLanguage();return;}
+ try{
+  await navigator.share({title:'BuiTai Heritage — demo feedback',text:feedbackText()});
+  feedbackStatus='ready';
+ }catch(error){
+  if(error&&error.name==='AbortError')return;
+  feedbackStatus='error';
+ }
+ renderFeedbackLanguage();
+});
+const previousFeedbackLanguage=applyLanguage;
+applyLanguage=function(next){previousFeedbackLanguage(next);renderFeedbackLanguage();};
+renderFeedbackLanguage();
 </script></body></html>
