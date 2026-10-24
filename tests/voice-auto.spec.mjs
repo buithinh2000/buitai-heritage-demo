@@ -171,6 +171,13 @@ test('Qwen engine code and weights do not load until explicit consent+click; AI 
   await page.locator('#draft-area').waitFor({state:'visible'});
   assert.match(await page.locator('#draft-content').innerText(),/Một ngày Tết/);
   assert.match(await page.locator('#draft-status').innerText(),/Cần kiểm tra/);
+  await page.locator('#draft-content textarea').fill('Tôi sống bên ông bà ở Huế, vẫn cần kiểm tra.');
+  assert.equal(await page.locator('#draft-content .print-paragraph').innerText(),
+   'Tôi sống bên ông bà ở Huế, vẫn cần kiểm tra.');
+  await page.emulateMedia({media:'print'});
+  assert.equal(await page.locator('#draft-content .print-paragraph').isVisible(),true);
+  assert.equal(await page.locator('#draft-content textarea').isVisible(),false);
+  await page.emulateMedia({media:'screen'});
   const downloadEvent=page.waitForEvent('download');
   await page.locator('#download-draft').click();
   const downloaded=await downloadEvent;
