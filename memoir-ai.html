@@ -50,9 +50,10 @@ textarea{min-height:175px;resize:vertical}button:focus-visible,textarea:focus-vi
 <section class="card" id="model-gate">
 <h2>2. Cho phép AI chạy ngay trong trình duyệt</h2>
 <p class="notice"><strong>Không phải AI trên cloud BuiTai:</strong> Đây là thử nghiệm WebGPU với mô hình Qwen2.5-0.5B. Để chạy, trình duyệt sẽ tải thư viện từ esm.sh và dữ liệu mô hình từ Hugging Face/GitHub về thiết bị, có thể tốn vài trăm MB và chiếm bộ nhớ GPU khoảng 1 GB. Đó là mã và tài nguyên của bên thứ ba. Không dùng hồi ký riêng tư/nhạy cảm trong đợt thử trước khi chúng ta hoàn tất đánh giá bảo mật. Chúng tôi không chủ động gửi nội dung hồi ký tới API suy luận từ xa.</p>
-<p class="muted">Có thể không chạy trên điện thoại, Safari hoặc thiết bị không hỗ trợ WebGPU. AI nhỏ có thể tạo tiếng Việt chưa tự nhiên, JSON sai hoặc bịa chi tiết; nếu thất bại, trang sẽ báo lỗi chứ không bịa bản hồi ký.</p>
+<p class="muted">Có thể không chạy trên điện thoại, Safari hoặc thiết bị không hỗ trợ WebGPU. Bấm kiểm tra máy trước để tránh tải model vô ích. AI nhỏ có thể tạo tiếng Việt chưa tự nhiên, JSON sai hoặc bịa chi tiết; nếu thất bại, trang sẽ báo lỗi chứ không bịa bản hồi ký.</p>
 <label class="check"><input type="checkbox" id="allow-model"><span>Tôi đã hiểu rủi ro và <strong>đồng ý tải mã/mô hình bên thứ ba về máy để thử AI cục bộ</strong>. Tôi chỉ dùng dữ liệu hư cấu hoặc không nhạy cảm trong bản thử nghiệm.</span></label>
-<div class="row"><button id="generate" type="button" disabled>AI biên tập thành hồi ký nháp</button></div>
+<div class="row"><button id="gpu-check" class="secondary" type="button">Kiểm tra máy của tôi (không tải AI)</button><button id="generate" type="button" disabled>AI biên tập thành hồi ký nháp</button></div>
+<p id="gpu-status" class="muted" role="status" aria-live="polite">Chưa kiểm tra adapter WebGPU. Việc có API WebGPU chưa bảo đảm mô hình hoạt động.</p>
 <p id="model-status" class="status" role="status" aria-live="polite">Chưa kiểm tra WebGPU. Chỉ tải mô hình sau khi bạn bấm nút.</p>
 </section>
 <section class="card" id="draft-area" hidden>
