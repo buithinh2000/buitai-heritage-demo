@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'voice-auto.html'
+      - 'transcript-review.html'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
@@ -18,7 +20,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -27,9 +29,13 @@ jobs:
       - name: Prepare public-only artifact
         run: |
           mkdir -p public
-          cp index.html public/index.html
-          test "$(find public -type f | wc -l)" -eq 1
+          # Explicit public-only allowlist: no private model files or recordings.
+          cp index.html voice-auto.html transcript-review.html public/
+          test "$(find public -type f | wc -l)" -eq 3
           test -s public/index.html
+          test -s public/voice-auto.html
+          test -s public/transcript-review.html
+          ! grep -F 'http://127.0.0.1:11434' public/voice-auto.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
