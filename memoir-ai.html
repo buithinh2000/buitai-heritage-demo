@@ -1,0 +1,172 @@
+<!doctype html><html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://esm.sh 'wasm-unsafe-eval'; style-src 'unsafe-inline'; connect-src 'self' https://esm.sh https://huggingface.co https://*.huggingface.co https://*.hf.co https://github.com https://*.githubusercontent.com; worker-src 'self' blob:; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<title>Heritage · AI biên tập hồi ký trên máy</title>
+<style>
+:root{font:16px system-ui,-apple-system,sans-serif;color:#283b30;background:#f4f2ec}*{box-sizing:border-box}
+body{margin:0}main{max-width:950px;padding:20px 16px 70px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}a{color:#21523d}
+.brand{font-weight:800;color:#21503c;font-size:21px}.hero{border-radius:22px;padding:29px;background:#dfe9de}
+h1{font-size:clamp(28px,5vw,43px);line-height:1.18;margin:8px 0}h2{font-size:21px;margin:0 0 12px}h3{font-size:17px}
+p{line-height:1.6}.card{background:#fff;padding:24px;border:1px solid #e0dfd7;border-radius:18px;margin-top:18px}
+.notice{padding:13px;background:#fff1da;border-left:4px solid #b58044;border-radius:8px}
+.muted{font-size:14px;color:#617166}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+button{border:0;border-radius:10px;background:#21533c;color:#fff;padding:13px 16px;min-height:48px;cursor:pointer;font:650 15px system-ui}
+button.secondary{background:#e5ece6;color:#234431}button:disabled{opacity:.48;cursor:not-allowed}
+label{display:block;margin:15px 0 7px;font-weight:650}.check{display:flex;gap:11px;align-items:flex-start;font-weight:400;line-height:1.55}
+input[type=checkbox]{width:20px;height:20px;margin-top:3px;flex:none}
+input[type=text],textarea{width:100%;font:16px/1.55 system-ui;border:1px solid #bccbbf;border-radius:10px;padding:12px}
+textarea{min-height:175px;resize:vertical}button:focus-visible,textarea:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #b1833f;outline-offset:3px}
+.status{background:#eaf3eb;padding:13px;border-radius:9px;min-height:42px}
+#draft-content article{background:#fffefa;border:1px solid #e6e4d8;border-radius:12px;padding:18px;margin:14px 0}
+#draft-content textarea{min-height:130px}#draft-content .cite{font-size:13px;color:#465a4e}
+#draft-content h3{font:700 24px Georgia,serif;margin:15px 0}
+#draft-content .chapter{padding-top:10px;border-top:1px solid #d1d5cb}
+#draft-content .chapter>h3{font-size:20px}
+#warning-list li{margin:7px 0}.smallcaps{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#996b30}
+[hidden]{display:none!important}
+@media(max-width:640px){main{padding:12px 10px 40px}.hero{padding:22px 17px}.card{padding:18px}.row button{flex:1 1 155px}}
+@media print{header,.hero,#source-area,#model-gate,#draft-actions,#draft-status,#warning-list,.notice,footer,button,.cite{display:none!important}body{background:white}main{max-width:none;padding:0}.card{padding:0;border:0}#draft-content article{border:0;padding:0}#draft-content textarea{border:0;min-height:0;overflow:visible;resize:none}@page{size:A4;margin:18mm}}
+</style></head>
+<body><main>
+<header><strong class="brand">BuiTai Heritage</strong><a href="./voice-auto.html">Quay lại trang ghi âm</a><span class="muted">AI WebGPU cục bộ · Thử nghiệm</span></header>
+<section class="hero">
+<p class="smallcaps">Dùng thử AI biên tập trên máy tính</p>
+<h1>Từ lời kể tiếng Việt thành bản thảo hồi ký có chương</h1>
+<p>Chép lời từ trang ghi âm → kiểm tra nội dung → chủ động tải mô hình AI vào máy → nhận bản nháp, sửa từng đoạn và lưu lại. <strong>AI có thể viết sai sự thật.</strong></p>
+</section>
+<section class="card" id="source-area">
+<h2>1. Lời kể để AI biên tập</h2>
+<p class="muted">Nội dung chuyển từ trang ghi âm chỉ được truyền qua bộ nhớ phiên cùng nguồn (sessionStorage), rồi xóa khỏi đó khi trang này nhận. Không lưu trên máy chủ BuiTai.</p>
+<label for="narration">Transcript tiếng Việt (ít nhất 25, tối đa 5.000 ký tự)</label>
+<textarea id="narration" maxlength="5000" placeholder="Ghi âm ở trang trước để tự chép lời, hoặc dán một transcript thử nghiệm không nhạy cảm."></textarea>
+<p id="source-count" class="muted">0/5000 ký tự</p>
+<div class="row"><button class="secondary" id="synthetic" type="button">Thử bằng chuyện mẫu hư cấu</button><button class="secondary" id="erase" type="button">Xóa dữ liệu trang này</button></div>
+<p class="muted">Trang này không hỗ trợ nhận dạng file audio. Để chép lời tự động, dùng <a href="./voice-auto.html">trang ghi âm</a>. Không cần gõ lại nếu đã chuyển lời kể từ đó.</p>
+</section>
+<section class="card" id="model-gate">
+<h2>2. Cho phép AI chạy ngay trong trình duyệt</h2>
+<p class="notice"><strong>Không phải AI trên cloud BuiTai:</strong> Đây là thử nghiệm WebGPU với mô hình Qwen2.5-0.5B. Để chạy, trình duyệt sẽ tải thư viện từ esm.sh và dữ liệu mô hình từ Hugging Face/GitHub về thiết bị, có thể tốn vài trăm MB và chiếm bộ nhớ GPU khoảng 1 GB. Đó là mã và tài nguyên của bên thứ ba. Không dùng hồi ký riêng tư/nhạy cảm trong đợt thử trước khi chúng ta hoàn tất đánh giá bảo mật. Chúng tôi không chủ động gửi nội dung hồi ký tới API suy luận từ xa.</p>
+<p class="muted">Có thể không chạy trên điện thoại, Safari hoặc thiết bị không hỗ trợ WebGPU. AI nhỏ có thể tạo tiếng Việt chưa tự nhiên, JSON sai hoặc bịa chi tiết; nếu thất bại, trang sẽ báo lỗi chứ không bịa bản hồi ký.</p>
+<label class="check"><input type="checkbox" id="allow-model"><span>Tôi đã hiểu rủi ro và <strong>đồng ý tải mã/mô hình bên thứ ba về máy để thử AI cục bộ</strong>. Tôi chỉ dùng dữ liệu hư cấu hoặc không nhạy cảm trong bản thử nghiệm.</span></label>
+<div class="row"><button id="generate" type="button" disabled>AI biên tập thành hồi ký nháp</button></div>
+<p id="model-status" class="status" role="status" aria-live="polite">Chưa kiểm tra WebGPU. Chỉ tải mô hình sau khi bạn bấm nút.</p>
+</section>
+<section class="card" id="draft-area" hidden>
+<h2>3. Đọc lại và chỉnh sửa bản nháp AI</h2>
+<p class="notice">**BẢN NHÁP AI CHƯA ĐƯỢC NGƯỜI KỂ PHÊ DUYỆT.** Mỗi đoạn có phần lời kể được tham chiếu, nhưng dẫn nguồn đúng cú pháp KHÔNG đảm bảo nội dung đúng. Nghe audio gốc để đối chiếu trước khi chia sẻ.</p>
+<p id="draft-status" class="status" role="status" aria-live="polite">Chưa tạo bản thảo.</p>
+<div id="draft-content"></div>
+<section>
+<h3>Những thông tin nên đối chiếu</h3><ul id="warning-list"></ul>
+<p class="muted">Bộ kiểm tra giới hạn chỉ đánh dấu một số con số không khớp lời kể được trích dẫn. Không phát hiện được mọi lỗi AI.</p>
+</section>
+<div class="row" id="draft-actions">
+<button id="download-draft" type="button">Tải bản nháp và nguồn (.json)</button>
+<button id="print-draft" class="secondary" type="button">In / Lưu thành PDF</button>
+</div>
+</section>
+<footer class="muted">Heritage bản thử nghiệm · Không xác nhận danh tính, không tự phê duyệt, không bảo đảm chính xác và chưa phải dịch vụ lưu trữ gia đình lâu dài.</footer>
+</main>
+<script type="module">
+import {generateMemoir,segmentVietnameseNarration} from './memoir-ai.mjs';
+const $=id=>document.getElementById(id);
+let output=null,working=false,originalSource='';
+function setStatus(x){$('model-status').textContent=x}
+function clearResult(){
+ output=null;$('draft-area').hidden=true;$('draft-content').replaceChildren();
+ $('warning-list').replaceChildren();$('draft-status').textContent='Chưa tạo bản thảo.';
+}
+function controls(){
+ const v=$('narration').value;$('source-count').textContent=v.length+'/5000 ký tự';
+ $('generate').disabled=working||!$('allow-model').checked||v.trim().length<25||v.length>5000;
+ $('narration').disabled=working;$('synthetic').disabled=working;$('erase').disabled=working;
+ $('allow-model').disabled=working;
+}
+try{
+ const handoff=sessionStorage.getItem('heritage-memoir-handoff-v1');
+ sessionStorage.removeItem('heritage-memoir-handoff-v1');
+ if(handoff&&handoff.length<=5500){const j=JSON.parse(handoff);if(typeof j?.text==='string'&&j.text.length<=5000)$('narration').value=j.text}
+}catch{try{sessionStorage.removeItem('heritage-memoir-handoff-v1')}catch{}}
+controls();
+if(!navigator.gpu)setStatus('Thiết bị chưa báo hỗ trợ WebGPU. AI trên trình duyệt nhiều khả năng không chạy được; không tự gửi transcript lên máy chủ.');
+else setStatus('Có API WebGPU. Chưa tải model; hãy thử bằng dữ liệu hư cấu trước.');
+$('narration').addEventListener('input',()=>{clearResult();controls()});
+$('allow-model').addEventListener('change',controls);
+$('synthetic').addEventListener('click',()=>{
+ $('narration').value='Hồi nhỏ tôi sống ở Cần Thơ, gần một con sông.\n\nTết đến, tôi cùng mẹ gói bánh tét và ngồi nghe bà kể chuyện.\n\nTôi chỉ nhớ khoảng năm 1985 gia đình chuyển nhà, nhưng không nhớ chính xác ngày nào.';
+ clearResult();controls();setStatus('Đã điền chuyện mẫu hư cấu. Chỉ tải model nếu tự nguyện đồng ý.');
+});
+$('erase').addEventListener('click',()=>{
+ clearResult();$('narration').value='';$('allow-model').checked=false;originalSource='';
+ try{sessionStorage.removeItem('heritage-memoir-handoff-v1')}catch{}
+ controls();setStatus('Đã xóa transcript và bản thảo trong trang. Model đã tải (nếu có) có thể còn trong bộ nhớ/cache của trình duyệt.');
+});
+function download(blob,filename){
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;
+ document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function render(){
+ const root=$('draft-content');root.replaceChildren();
+ const heading=document.createElement('h2');heading.textContent=output.editorial.title;root.append(heading);
+ const sources=new Map(output.segments.map(s=>[s.id,s.text]));
+ for(const [i,chapter] of output.editorial.chapters.entries()){
+  const group=document.createElement('section');group.className='chapter';
+  const h=document.createElement('h3');h.textContent='Chương '+(i+1)+' · '+chapter.title;group.append(h);
+  for(const [j,p] of chapter.paragraphs.entries()){
+   const article=document.createElement('article'),label=document.createElement('label');
+   label.textContent='Đoạn '+(j+1)+' · chỉnh sửa nếu AI viết sai';
+   const area=document.createElement('textarea');area.value=p.text;area.maxLength=1300;
+   area.setAttribute('aria-label','Chương '+(i+1)+' đoạn '+(j+1));
+   area.addEventListener('input',()=>{p.text=area.value;$('draft-status').textContent='Đã sửa bản nháp. VẪN CHƯA PHÊ DUYỆT.'});
+   const cite=document.createElement('p');cite.className='cite';cite.textContent='Nguồn: '+p.sourceSegmentIds.map(id=>id+': '+sources.get(id)).join(' | ');
+   article.append(label,area,cite);group.append(article);
+  }
+  root.append(group);
+ }
+ const list=$('warning-list');list.replaceChildren();
+ if(output.editorial.warnings.length){
+  for(const w of output.editorial.warnings){
+   const li=document.createElement('li');li.textContent='Chương '+(w.chapter+1)+', đoạn '+(w.paragraph+1)+': số “'+w.term+'” không thấy ở câu nguồn được trích. Cần nghe lại.';
+   list.append(li);
+  }
+ }else{const li=document.createElement('li');li.textContent='Không thấy số đáng ngờ theo phép kiểm tra hạn chế. KHÔNG có nghĩa bản AI đã đúng.';list.append(li)}
+ $('draft-status').textContent='AI đã tạo bản nháp có dẫn nguồn. Cần kiểm tra từng câu với người kể.';
+ $('draft-area').hidden=false;
+ $('draft-area').scrollIntoView({block:'start',behavior:'smooth'});
+}
+$('generate').addEventListener('click',async()=>{
+ if(working||!$('allow-model').checked)return;
+ if(!navigator.gpu){setStatus('Không có WebGPU. Không thể chạy AI cục bộ trên trình duyệt này.');return}
+ const text=$('narration').value.trim();
+ try{segmentVietnameseNarration(text)}catch{setStatus('Lời kể quá ngắn, dài hoặc quá nhiều đoạn để thử model nhỏ.');return}
+ working=true;controls();clearResult();
+ originalSource=text;
+ try{
+  // No third-party script or model fetch occurs before this explicit user click.
+  setStatus('Đang lấy thư viện AI đã chọn; có thể cần tải mô hình vào thiết bị…');
+  const {CreateMLCEngine}=await import('https://esm.sh/@mlc-ai/web-llm@0.2.85?bundle');
+  if(typeof CreateMLCEngine!=='function')throw Error('Missing WebLLM engine');
+  const result=await generateMemoir(text,{createEngine:CreateMLCEngine,onProgress:setStatus});
+  output=result;render();
+  setStatus('Đã biên tập bằng mô hình trên trình duyệt; phải kiểm tra nội dung trước khi dùng.');
+ }catch(error){
+  setStatus('Không tạo được bản AI: '+String(error?.message||error).slice(0,220)+
+   '. Không có bản giả và không dùng API cloud BuiTai. Thử thiết bị hỗ trợ WebGPU hoặc chờ bản dịch vụ bảo mật.');
+ }finally{working=false;controls()}
+});
+$('download-draft').addEventListener('click',()=>{
+ if(!output)return;
+ const payload={status:'NEEDS_NARRATOR_APPROVAL',engine:'browser-webgpu-qwen2.5-0.5b',
+  sourceTranscript:originalSource,sourceSegments:output.segments,
+  title:output.editorial.title,chapters:output.editorial.chapters,warnings:output.editorial.warnings,
+  notice:'AI output is unverified. Not evidence of consent. Audio original must be reviewed separately.'};
+ download(new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),
+  'heritage-ai-memoir-UNAPPROVED.json');
+});
+$('print-draft').addEventListener('click',()=>{if(output)window.print()});
+window.addEventListener('beforeunload',e=>{if($('narration').value.trim()||output){e.preventDefault();e.returnValue=''}});
+</script>
+</body></html>
