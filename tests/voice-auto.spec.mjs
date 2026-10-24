@@ -169,6 +169,8 @@ test('Qwen engine code and weights do not load until explicit consent+click; AI 
   }));
   await page.goto(base+'/memoir-ai.html');
   await page.locator('#synthetic').click();
+  assert.equal(await page.locator('#model-evidence').isVisible(),true);
+  assert.equal(await page.locator('#evidence-download').isDisabled(),true);
   assert.equal(external.length,0,'No model or external library before user initiation');
   assert.equal(await page.locator('#generate').isDisabled(),true);
   await page.locator('#allow-model').check();
@@ -177,6 +179,17 @@ test('Qwen engine code and weights do not load until explicit consent+click; AI 
   await page.locator('#draft-area').waitFor({state:'visible'});
   assert.match(await page.locator('#draft-content').innerText(),/Một ngày Tết/);
   assert.match(await page.locator('#draft-status').innerText(),/Cần kiểm tra/);
+  assert.match(await page.locator('#evidence-status').innerText(),/Model đã trả về JSON hợp lệ/);
+  const evidenceEvent=page.waitForEvent('download');
+  await page.locator('#evidence-download').click();
+  const evidence=JSON.parse(await readFile(await (await evidenceEvent).path(),'utf8'));
+  assert.equal(evidence.status,'MODEL_RETURNED_STRUCTURED_DRAFT');
+  assert.equal(evidence.containsTranscript,false);
+  assert.equal(evidence.containsGeneratedText,false);
+  assert.equal(evidence.chapterCount,1);
+  assert.ok(evidence.elapsedMs>=0);
+  assert.equal(JSON.stringify(evidence).includes('Cần Thơ'),false);
+  assert.equal(JSON.stringify(evidence).includes('Một ngày Tết'),false);
   await page.locator('#draft-content textarea').fill('Năm 1975 tôi chuyển đến Đà Nẵng.');
   assert.match(await page.locator('#warning-list').innerText(),/1975/);
   assert.match(await page.locator('#warning-list').innerText(),/Đà Nẵng/);
@@ -199,5 +212,22 @@ test('Qwen engine code and weights do not load until explicit consent+click; AI 
   await page.locator('#erase').click();
   assert.equal(await page.locator('#narration').inputValue(),'');
   assert.equal(await page.locator('#draft-area').isHidden(),true);
+  assert.equal(await page.locator('#model-evidence').isHidden(),true);
+ }finally{await page.close()}
+});
+
+test('unsupported GPU reports synthetic-only failure and does not request model assets',async()=>{
+ const page=await browser.newPage();
+ try{
+  const external=[];
+  page.on('request',request=>{if(!request.url().startsWith(base))external.push(request.url())});
+  await page.goto(base+'/memoir-ai.html');
+  await page.locator('#synthetic').click();
+  await page.locator('#allow-model').check();
+  await page.locator('#generate').click();
+  await page.waitForFunction(()=>document.getElementById('evidence-download')?.disabled===false);
+  assert.match(await page.locator('#evidence-status').innerText(),/NO_WEBGPU/);
+  assert.equal(await page.locator('#draft-area').isHidden(),true);
+  assert.deepEqual(external,[]);
  }finally{await page.close()}
 });
