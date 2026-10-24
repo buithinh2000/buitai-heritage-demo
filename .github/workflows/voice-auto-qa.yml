@@ -1,0 +1,34 @@
+name: Heritage speech-first demo QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'voice-auto.html'
+      - 'index.html'
+      - 'tests/voice-auto.spec.mjs'
+      - '.github/workflows/voice-auto-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: heritage-voice-demo-qa
+  cancel-in-progress: true
+jobs:
+  browser-qa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Playwright (test dependency only)
+        run: |
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Run browser tests with synthetic microphone and recognition
+        run: node --test tests/voice-auto.spec.mjs
+      - name: Verify shipped HTML has no third-party script or network dependencies
+        run: |
+          node -e "const fs=require('fs');const x=fs.readFileSync('voice-auto.html','utf8');if(!x.includes('connect-src \'none\'')||!x.includes('processLocally=true')||!x.includes('consent-remote')||!x.includes('CHƯA PHÊ DUYỆT'))process.exit(1)"
