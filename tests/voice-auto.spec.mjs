@@ -136,6 +136,12 @@ test('voice transcript crosses to on-device memoir editor using one-time session
   await page.locator('#stop').click();
   await page.waitForFunction(()=>!document.getElementById('to-ai').disabled);
   await page.locator('#to-ai').click();
+  assert.ok(page.url().endsWith('/voice-auto.html'),'Do not leave until original audio download was requested');
+  assert.match(await page.locator('#record-status').innerText(),/Tải giọng nói gốc/);
+  const original=page.waitForEvent('download');
+  await page.locator('#download-audio').click();
+  assert.match((await original).suggestedFilename(),/giong-noi-goc/);
+  await page.locator('#to-ai').click();
   await page.waitForURL('**/memoir-ai.html');
   assert.match(await page.locator('#narration').inputValue(),/Tôi lớn lên ở Huế/);
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('heritage-memoir-handoff-v1')),null);
@@ -171,7 +177,11 @@ test('Qwen engine code and weights do not load until explicit consent+click; AI 
   await page.locator('#draft-area').waitFor({state:'visible'});
   assert.match(await page.locator('#draft-content').innerText(),/Một ngày Tết/);
   assert.match(await page.locator('#draft-status').innerText(),/Cần kiểm tra/);
+  await page.locator('#draft-content textarea').fill('Năm 1975 tôi chuyển đến Đà Nẵng.');
+  assert.match(await page.locator('#warning-list').innerText(),/1975/);
+  assert.match(await page.locator('#warning-list').innerText(),/Đà Nẵng/);
   await page.locator('#draft-content textarea').fill('Tôi sống bên ông bà ở Huế, vẫn cần kiểm tra.');
+  assert.equal((await page.locator('#warning-list').innerText()).includes('1975'),false);
   assert.equal(await page.locator('#draft-content .print-paragraph').innerText(),
    'Tôi sống bên ông bà ở Huế, vẫn cần kiểm tra.');
   await page.emulateMedia({media:'print'});
