@@ -153,7 +153,7 @@ test('Qwen engine code and weights do not load until explicit consent+click; AI 
  const page=await browser.newPage({acceptDownloads:true});
  try{
   await page.addInitScript(()=>Object.defineProperty(navigator,'gpu',{
-   configurable:true,value:{requestAdapter:async()=>({})}
+   configurable:true,value:{requestAdapter:async()=>({features:new Set(['shader-f16'])})}
   }));
   const external=[];
   page.on('request',req=>{if(!req.url().startsWith(base))external.push(req.url())});
@@ -184,6 +184,7 @@ test('Qwen engine code and weights do not load until explicit consent+click; AI 
   await page.locator('#evidence-download').click();
   const evidence=JSON.parse(await readFile(await (await evidenceEvent).path(),'utf8'));
   assert.equal(evidence.status,'MODEL_RETURNED_STRUCTURED_DRAFT');
+  assert.match(evidence.modelId,/Qwen2\.5-1\.5B/);
   assert.equal(evidence.containsTranscript,false);
   assert.equal(evidence.containsGeneratedText,false);
   assert.equal(evidence.chapterCount,1);
@@ -230,6 +231,30 @@ test('unsupported GPU reports synthetic-only failure and does not request model 
   await page.locator('#generate').click();
   await page.waitForFunction(()=>document.getElementById('evidence-download')?.disabled===false);
   assert.match(await page.locator('#evidence-status').innerText(),/NO_WEBGPU/);
+  assert.equal(await page.locator('#draft-area').isHidden(),true);
+  assert.deepEqual(external,[]);
+ }finally{await page.close()}
+});
+
+test('quality model fails closed without shader-f16, lightweight fallback requires explicit selection',async()=>{
+ const page=await browser.newPage();
+ try{
+  await page.addInitScript(()=>Object.defineProperty(navigator,'gpu',{
+   configurable:true,value:{requestAdapter:async()=>({features:new Set()})}
+  }));
+  const external=[];
+  page.on('request',req=>{if(!req.url().startsWith(base))external.push(req.url())});
+  await page.goto(base+'/memoir-ai.html');
+  await page.locator('#synthetic').click();
+  await page.locator('#allow-model').check();
+  assert.equal(await page.locator('#model-choice').inputValue(),'quality');
+  await page.locator('#generate').click();
+  assert.match(await page.locator('#gpu-status').innerText(),/shader-f16/);
+  assert.equal(await page.locator('#generate').isEnabled(),true);
+  assert.deepEqual(external,[]);
+  await page.locator('#model-choice').selectOption('lightweight');
+  await page.locator('#gpu-check').click();
+  assert.match(await page.locator('#gpu-status').innerText(),/Qwen 0.5B/);
   assert.equal(await page.locator('#draft-area').isHidden(),true);
   assert.deepEqual(external,[]);
  }finally{await page.close()}
