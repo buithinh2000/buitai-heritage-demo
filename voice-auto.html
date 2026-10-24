@@ -114,7 +114,7 @@ const $=id=>document.getElementById(id);
 const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
 const MAX_MS=90000;
 let recognition=null,recorder=null,stream=null,parts=[],audio=null,audioUrl=null;
-let speechActive=false,recording=false,closing=false,sessionTimer=null,startedAt=0;
+let speechActive=false,recording=false,closing=false,sessionTimer=null,startedAt=0,epoch=0,starting=false;
 let finals=[],interim='',recognized=false,finalError='';
 function status(message){$('record-status').textContent=message}
 function stopTracks(){if(stream){for(const t of stream.getTracks())t.stop();stream=null}}
@@ -125,7 +125,7 @@ function syncButtons(){
  const remote=$('recognition-mode').value==='browser';
  $('remote-label').hidden=!remote;
  const allowed=$('consent-record').checked&&(!remote||$('consent-remote').checked);
- $('start').disabled=!Rec||!allowed||speechActive||recording||closing||!$('start').dataset.supported;
+ $('start').disabled=!Rec||!allowed||starting||speechActive||recording||closing||!$('start').dataset.supported;
  $('stop').disabled=!speechActive&&!recording;
  $('clear').disabled=!audio&&!readText()&&!speechActive;
  $('download-audio').disabled=!audio;
@@ -192,7 +192,7 @@ installButton.addEventListener('click',async()=>{
  finally{installButton.disabled=false;installButton.hidden=true;await modeReadiness();}
 });
 $('recognition-mode').addEventListener('change',()=>{
- if(speechActive||recording)return;
+ if(speechActive||recording||starting)return;
  installButton.hidden=true;
  $('consent-remote').checked=false;
  modeReadiness();
@@ -220,31 +220,33 @@ function finish(){
  syncButtons();
 }
 function clearSession(){
- stopTimer();stopRecognition();speechActive=false;
+ epoch++;starting=false;stopTimer();stopRecognition();speechActive=false;
  if(recorder?.state==='recording'){try{recorder.stop()}catch{}}
  stopTracks();recording=false;closing=false;recorder=null;parts=[];revokeAudio();
  finals=[];interim='';recognized=false;finalError='';$('transcript').value='';$('interim').textContent='';
  $('book').hidden=true;status('Đã xóa dữ liệu của phiên trong trang. File đã tải xuống máy cần được xóa riêng nếu muốn.');syncButtons();
 }
 $('start').addEventListener('click',async()=>{
- if($('start').disabled||!Rec||speechActive||recording||closing)return;
+ if($('start').disabled||!Rec||starting||speechActive||recording||closing)return;
  if($('recognition-mode').value==='browser'&&!$('consent-remote').checked)return;
  const mode=$('recognition-mode').value;
- $('start').disabled=true;finalError='';stopTimer();
+ starting=true;syncButtons();finalError='';stopTimer();
+ const runEpoch=++epoch,localParts=[];
  // A fresh recording always starts a fresh transcript. Never mix sessions.
  parts=[];finals=[];interim='';$('transcript').value='';$('book').hidden=true;revokeAudio();
  try{
   if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw Error('Thiết bị không cho phép lưu giọng nói bằng MediaRecorder.');
   stream=await navigator.mediaDevices.getUserMedia({audio:true});
-  if(!$('consent-record').checked||(mode==='browser'&&!$('consent-remote').checked)){
+  if(runEpoch!==epoch||!$('consent-record').checked||(mode==='browser'&&!$('consent-remote').checked)){
    stopTracks();syncButtons();return;
   }
   recorder=new MediaRecorder(stream);
-  recorder.ondataavailable=e=>{if(e.data?.size)parts.push(e.data)};
+  recorder.ondataavailable=e=>{if(e.data?.size)localParts.push(e.data)};
   recorder.onstop=()=>{
+   if(runEpoch!==epoch)return;
    stopTracks();recording=false;closing=false;
-   if($('consent-record').checked&&parts.length){
-    const blob=new Blob(parts,{type:recorder.mimeType||'audio/webm'});
+   if($('consent-record').checked&&localParts.length){
+    const blob=new Blob(localParts,{type:recorder.mimeType||'audio/webm'});
     if(blob.size){audio=blob;audioUrl=URL.createObjectURL(blob);
      $('playback').src=audioUrl;$('playback').hidden=false;}
    }
@@ -256,7 +258,7 @@ $('start').addEventListener('click',async()=>{
   recognition.continuous=true;recognition.interimResults=true;recognition.maxAlternatives=1;
   if(mode==='local')recognition.processLocally=true;
   recognition.onresult=event=>{
-   if(!speechActive)return;
+   if(runEpoch!==epoch||(!speechActive&&!closing))return;
    for(let i=event.resultIndex;i<event.results.length;i++){
     const res=event.results[i],value=res[0]?.transcript?.trim();
     if(!value)continue;
@@ -266,14 +268,15 @@ $('start').addEventListener('click',async()=>{
    if(finals.some(Boolean))recognized=true;
    updateTranscript();
   };
-  recognition.onerror=event=>{finalError=event.error||'Không rõ lỗi';finish()};
-  recognition.onend=()=>{if(speechActive)finish()};
+  recognition.onerror=event=>{if(runEpoch!==epoch)return;finalError=event.error||'Không rõ lỗi';finish()};
+  recognition.onend=()=>{if(runEpoch===epoch&&speechActive)finish()};
   recorder.start(500);recording=true;speechActive=true;startedAt=Date.now();
   try{recognition.start()}catch(error){finalError=error?.message||'Không thể khởi động nhận dạng';finish();return}
   sessionTimer=setTimeout(()=>finish(),MAX_MS);
   status('Đang nghe và chép lời tiếng Việt… Kể chuyện tự nhiên, bấm Dừng khi xong.');
   syncButtons();
- }catch(error){finalError=error?.message||'Microphone không khả dụng';finish()}
+ }catch(error){if(runEpoch!==epoch)return;finalError=error?.message||'Microphone không khả dụng';finish()}
+ finally{if(runEpoch===epoch){starting=false;syncButtons()}}
 });
 $('stop').addEventListener('click',finish);
 $('clear').addEventListener('click',clearSession);
