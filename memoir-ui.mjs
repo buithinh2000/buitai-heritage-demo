@@ -47,9 +47,13 @@ function render(){
    label.textContent='Đoạn '+(j+1)+' · chỉnh sửa nếu AI viết sai';
    const area=document.createElement('textarea');area.value=p.text;area.maxLength=1300;
    area.setAttribute('aria-label','Chương '+(i+1)+' đoạn '+(j+1));
-   area.addEventListener('input',()=>{p.text=area.value;$('draft-status').textContent='Đã sửa bản nháp. VẪN CHƯA PHÊ DUYỆT.'});
+   const printable=document.createElement('p');printable.className='print-paragraph';printable.textContent=p.text;
+   area.addEventListener('input',()=>{
+    p.text=area.value;printable.textContent=area.value;
+    $('draft-status').textContent='Đã sửa bản nháp. VẪN CHƯA PHÊ DUYỆT.';
+   });
    const cite=document.createElement('p');cite.className='cite';cite.textContent='Nguồn: '+p.sourceSegmentIds.map(id=>id+': '+sources.get(id)).join(' | ');
-   article.append(label,area,cite);group.append(article);
+   article.append(label,area,printable,cite);group.append(article);
   }
   root.append(group);
  }
