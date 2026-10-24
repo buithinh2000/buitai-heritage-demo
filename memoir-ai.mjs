@@ -1,7 +1,11 @@
 // BuiTai Heritage experimental PRIVATE-ON-DEVICE editorial adapter.
 // Free client WebGPU inference (Qwen2.5), no BuiTai API. External JS/model
 // downloads require informed user opt-in; never auto-upload a memoir.
-export const MODEL_ID='Qwen2.5-0.5B-Instruct-q4f32_1-MLC';
+export const MODEL_CHOICES=Object.freeze({
+ quality:'Qwen2.5-1.5B-Instruct-q4f16_1-MLC',
+ lightweight:'Qwen2.5-0.5B-Instruct-q4f32_1-MLC'
+});
+export const MODEL_ID=MODEL_CHOICES.quality;
 const err=code=>{throw Error('heritage.editor.'+code)};
 export function segmentVietnameseNarration(source){
  if(typeof source!=='string'||source.trim().length<25||source.length>5000)err('source_length');
@@ -62,12 +66,13 @@ export function validateMemoirDraft(raw,segments){
  if(total>20)err('too_long');
  return {title:raw.title.trim(),chapters,warnings,reviewStatus:'NEEDS_NARRATOR_APPROVAL'};
 }
-export async function generateMemoir(source,{createEngine,onProgress=()=>{}}={}){
+export async function generateMemoir(source,{createEngine,onProgress=()=>{},modelId=MODEL_ID}={}){
  if(typeof createEngine!=='function')err('model_engine_missing');
+ if(!Object.values(MODEL_CHOICES).includes(modelId))err('unsupported_model');
  const segments=segmentVietnameseNarration(source);
  let engine;
  try{
-  engine=await createEngine(MODEL_ID,{initProgressCallback:progress=>{
+  engine=await createEngine(modelId,{initProgressCallback:progress=>{
    onProgress(typeof progress?.text==='string'?progress.text:'Đang tải mô hình trên thiết bị…');
   }});
   onProgress('AI đang biên tập bản hồi ký trên máy này…');
