@@ -1,0 +1,142 @@
+name: Heritage bounded REAL Qwen 1.5B Vietnamese CPU comparison
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/heritage-qwen15-real-once.yml']
+permissions:
+  contents: read
+concurrency:
+  group: heritage-qwen15-real-once
+  cancel-in-progress: true
+jobs:
+  actual-model-15b-smoke:
+    if: github.repository == 'buithinh2000/buitai-heritage-demo'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Model run scope — synthetic, capped and no credentials
+        run: |
+          echo 'SYNTHETIC VIETNAMESE STORY ONLY; no family audio, secret, account or hosted model API.'
+          echo 'MODEL: Qwen/Qwen2.5-1.5B-Instruct-GGUF Q4_K_M (1.12 GB)'
+          echo 'ENGINE: llama.cpp b11860 Ubuntu x64 CPU (not WebGPU and not WebLLM).'
+      - name: Fetch SHA256-pinned llama.cpp release binary (max 60s)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 2 --connect-timeout 10 --max-time 60 \
+            --max-filesize 30000000 \
+            -o /tmp/llama-b11860.tar.gz \
+            https://github.com/ggml-org/llama.cpp/releases/download/b11860/llama-b11860-bin-ubuntu-x64.tar.gz
+          echo '99d7b401bd2bff086299086a57689f745a05db2057fc3288665b283cf622b719  /tmp/llama-b11860.tar.gz' | sha256sum --check
+          mkdir -p /tmp/llama-bin
+          tar -xzf /tmp/llama-b11860.tar.gz -C /tmp/llama-bin
+          CLI="$(find /tmp/llama-bin -type f -name llama-completion -print -quit)"
+          test -n "$CLI"
+          chmod +x "$CLI"
+          echo "CLI=$CLI" >> "$GITHUB_ENV"
+          echo "LD_LIBRARY_PATH=$(dirname "$CLI")" >> "$GITHUB_ENV"
+          ls -lh "$CLI"
+      - name: Fetch SHA256-pinned original Qwen model (max 210s, 1.15GB hard cap)
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 1 --connect-timeout 10 --max-time 210 \
+            --max-filesize 1150000000 \
+            -o /tmp/qwen2.5-1.5b-instruct-q4_k_m.gguf \
+            https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf
+          echo '6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e  /tmp/qwen2.5-1.5b-instruct-q4_k_m.gguf' | sha256sum --check
+          echo 'Verified official Qwen weight blob.'
+      - name: Perform ONE actual CPU generation using fictional Vietnamese memoir
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' > /tmp/synthetic_prompt.txt
+          import json
+          story=[
+           {"id":"seg-001","text":"Hồi nhỏ tôi sống ở Cần Thơ, gần một con sông."},
+           {"id":"seg-002","text":"Tết đến, tôi cùng mẹ gói bánh tét và ngồi nghe bà kể chuyện."},
+           {"id":"seg-003","text":"Tôi chỉ nhớ khoảng năm 1985 gia đình chuyển nhà, nhưng không nhớ chính xác ngày nào."}
+          ]
+          instruction=('Biên tập truyện HƯ CẤU sau thành hồi ký tiếng Việt, không bịa ngày tháng, tên riêng, địa điểm, quan hệ hay cảm xúc. '
+           'Chỉ xuất một JSON object: {"title":"...","chapters":[{"title":"...","paragraphs":[{"text":"...","sourceSegmentIds":["seg-001"]}]}]}. '
+           'Tối đa 2 chương, mỗi chương 3 đoạn, mỗi đoạn phải dẫn id nguồn liên quan. Nguồn: '
+           +json.dumps(story,ensure_ascii=False))
+          print('<|im_start|>system\nBạn là biên tập viên hồi ký trung thực. Chỉ trả JSON, không thêm sự kiện.<|im_end|>')
+          print('<|im_start|>user\n'+instruction+'<|im_end|>')
+          print('<|im_start|>assistant')
+          PY
+          echo 'ACTUAL_MODEL_EXECUTION_BEGIN'
+          START="$(date +%s)"
+          set +e
+          timeout --signal=TERM --kill-after=5s 160s "$CLI" \
+            -m /tmp/qwen2.5-1.5b-instruct-q4_k_m.gguf \
+            -p "$(cat /tmp/synthetic_prompt.txt)" \
+            -n 310 -c 2048 -t 4 -ngl 0 --temp 0.1 \
+            --no-conversation --no-display-prompt --no-warmup \
+            > real_qwen15_output.txt 2> real_qwen15_stderr.txt
+          EXIT_CODE="$?"
+          set -e
+          END="$(date +%s)"
+          echo "EXIT_CODE=$EXIT_CODE ELAPSED_S=$((END - START))"
+          python3 - <<'PY'
+          import json,re,pathlib
+          text=pathlib.Path('real_qwen15_output.txt').read_text(encoding='utf8',errors='replace')
+          clean=re.sub(r'\x1b\[[0-9;]*m','',text)
+          # llama-completion echoes the input prompt; FIRST parseable JSON is the
+          # EXAMPLE schema in the prompt. Always prefer the LAST generated object.
+          candidates=[]
+          for m in re.finditer(r'\{',clean):
+           try:
+            obj,_=json.JSONDecoder().raw_decode(clean[m.start():])
+            if isinstance(obj,dict) and 'chapters' in obj:
+             candidates.append(obj)
+           except (ValueError,TypeError):
+            pass
+          draft=candidates[-1] if candidates else None
+          chapters=draft.get('chapters',[]) if isinstance(draft,dict) else []
+          paras=[p for ch in chapters if isinstance(ch,dict) and isinstance(ch.get('paragraphs'),list) for p in ch['paragraphs'] if isinstance(p,dict)]
+          sourceids={'seg-001','seg-002','seg-003'}
+          cites=bool(paras) and all(isinstance(p.get('sourceSegmentIds'),list) and len(p['sourceSegmentIds']) and all(x in sourceids for x in p['sourceSegmentIds']) for p in paras)
+          prose=' '.join(str(p.get('text','')) for p in paras)
+          # An ID can exist and still cite the WRONG segment. Count obviously
+          # unsupported cross-segment details in the invented 3-line story.
+          detail_source={'Cần Thơ':'seg-001','bánh tét':'seg-002','1985':'seg-003'}
+          cross_segment_mismatches=[
+           {'paragraph':i,'term':term,'required_source_id':required}
+           for i,p in enumerate(paras)
+           for term,required in detail_source.items()
+           if term.lower() in str(p.get('text','')).lower()
+           and required not in p.get('sourceSegmentIds',[])
+          ]
+          unique_paragraphs=len(set(str(p.get('text','')).strip() for p in paras))
+          evidence={'schema':'heritage.actual-gguf-cpu-smoke.v3','synthetic_only':True,
+            'runtime':'llama.cpp completion CPU b11860', 'model':'Qwen2.5-1.5B-Instruct-GGUF Q4_K_M',
+            'model_executed':bool(clean.strip()),'parsed_json':isinstance(draft,dict),
+            'parsed_json_candidates':len(candidates),
+            'valid_source_ids':cites,'chapters':len(chapters),'paragraphs':len(paras),
+            'unique_paragraph_texts':unique_paragraphs,
+            'unsupported_cross_segment_details':len(cross_segment_mismatches),
+            'mismatch_examples':cross_segment_mismatches[:6],
+            'contains_source_place_can_tho':'Cần Thơ' in prose,
+            'contains_source_year_1985':'1985' in prose,
+            'invented_year_1975':bool(re.search(r'(?<!\d)1975(?!\d)',prose)),
+            'note':'REAL GGUF CPU generated text parsed from LAST JSON (not prompt example). A citation ID can be syntactically valid while referencing wrong segment. NOT WebGPU or factual approval.'}
+          pathlib.Path('real_qwen15_evidence.json').write_text(json.dumps(evidence,ensure_ascii=False,indent=2),encoding='utf8')
+          print('REAL MODEL EVIDENCE:',json.dumps(evidence,ensure_ascii=False))
+          print('SYNTHETIC MODEL OUTPUT: '+clean.strip()[:2800])
+          PY
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            tail -c 1000 real_qwen15_stderr.txt || true
+            exit "$EXIT_CODE"
+          fi
+      - name: Upload one synthetic real-model evidence (3-day retention only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: heritage-REAL-QWEN-15B-CPU-synthetic-only
+          path: |
+            real_qwen15_evidence.json
+            real_qwen15_output.txt
+            real_qwen15_stderr.txt
+          if-no-files-found: warn
+          retention-days: 3
