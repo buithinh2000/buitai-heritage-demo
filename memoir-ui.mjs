@@ -1,6 +1,22 @@
-import {generateMemoir,segmentVietnameseNarration,assessEditedMemoir} from './memoir-ai.mjs';
+import {generateMemoir,segmentVietnameseNarration,assessEditedMemoir,MODEL_ID} from './memoir-ai.mjs';
+import {SYNTHETIC_STORY,createSyntheticEvidence} from './model-evidence.mjs';
 const $=id=>document.getElementById(id);
-let output=null,working=false,originalSource='',lastGpuCheck=null;
+let output=null,working=false,originalSource='',lastGpuCheck=null,
+ syntheticFixtureActive=false,syntheticEvidence=null;
+function setEvidence(report){
+ syntheticEvidence=report;
+ $('model-evidence').hidden=!syntheticFixtureActive;
+ $('evidence-download').disabled=!report;
+ if(!report){
+  $('evidence-status').textContent='Chưa chạy AI với câu chuyện hư cấu trên thiết bị này.';
+ }else{
+  $('evidence-status').textContent=report.status==='MODEL_RETURNED_STRUCTURED_DRAFT'?
+   'Model đã trả về JSON hợp lệ: '+report.chapterCount+' chương, '+report.paragraphCount+
+   ' đoạn, tổng thời gian '+report.elapsedMs+' ms. Chất lượng tiếng Việt và độ đúng sự thật CHƯA được xác minh.':
+   'Lần chạy chưa thành công ('+report.status+'), thời gian '+report.elapsedMs+
+   ' ms. Báo cáo không có dữ liệu cá nhân.';
+ }
+}
 function setStatus(x){$('model-status').textContent=x}
 function clearResult(){
  output=null;$('draft-area').hidden=true;$('draft-content').replaceChildren();
@@ -41,14 +57,18 @@ async function checkWebGpu(){
 $('gpu-check').addEventListener('click',checkWebGpu);
 if(!navigator.gpu)setStatus('Thiết bị chưa báo hỗ trợ WebGPU. AI trên trình duyệt nhiều khả năng không chạy được; không tự gửi transcript lên máy chủ.');
 else setStatus('Có API WebGPU. Chưa tải model; hãy thử bằng dữ liệu hư cấu trước.');
-$('narration').addEventListener('input',()=>{clearResult();controls()});
+$('narration').addEventListener('input',()=>{
+ syntheticFixtureActive=false;setEvidence(null);clearResult();controls();
+});
 $('allow-model').addEventListener('change',controls);
 $('synthetic').addEventListener('click',()=>{
- $('narration').value='Hồi nhỏ tôi sống ở Cần Thơ, gần một con sông.\n\nTết đến, tôi cùng mẹ gói bánh tét và ngồi nghe bà kể chuyện.\n\nTôi chỉ nhớ khoảng năm 1985 gia đình chuyển nhà, nhưng không nhớ chính xác ngày nào.';
+ $('narration').value=SYNTHETIC_STORY;
+ syntheticFixtureActive=true;setEvidence(null);
  clearResult();controls();setStatus('Đã điền chuyện mẫu hư cấu. Chỉ tải model nếu tự nguyện đồng ý.');
 });
 $('erase').addEventListener('click',()=>{
  clearResult();$('narration').value='';$('allow-model').checked=false;originalSource='';
+ syntheticFixtureActive=false;setEvidence(null);
  try{sessionStorage.removeItem('heritage-memoir-handoff-v1')}catch{}
  controls();setStatus('Đã xóa transcript và bản thảo trong trang. Model đã tải (nếu có) có thể còn trong bộ nhớ/cache của trình duyệt.');
 });
@@ -101,25 +121,51 @@ function render(){
 }
 $('generate').addEventListener('click',async()=>{
  if(working||!$('allow-model').checked)return;
+ const start=performance.now(),isSample=syntheticFixtureActive&&$('narration').value===SYNTHETIC_STORY;
+ let gpuReady=false,modelPhase='GPU';
+ const recordFailure=code=>{
+  if(!isSample)return;
+  setEvidence(createSyntheticEvidence({mode:'synthetic',modelId:MODEL_ID,
+   gpuAdapter:gpuReady,elapsedMs:performance.now()-start,errorCode:code}));
+ };
  if(!await checkWebGpu()){
-  setStatus('Không có WebGPU adapter sử dụng được. Không tải thư viện hoặc model.');return;
+  setStatus('Không có WebGPU adapter sử dụng được. Không tải thư viện hoặc model.');
+  recordFailure('NO_WEBGPU');return;
  }
+ gpuReady=true;
  const text=$('narration').value.trim();
- try{segmentVietnameseNarration(text)}catch{setStatus('Lời kể quá ngắn, dài hoặc quá nhiều đoạn để thử model nhỏ.');return}
- working=true;controls();clearResult();
+ try{segmentVietnameseNarration(text)}catch{
+  setStatus('Lời kể quá ngắn, dài hoặc quá nhiều đoạn để thử model nhỏ.');
+  return;
+ }
+ working=true;controls();clearResult();if(isSample)setEvidence(null);
  originalSource=text;
  try{
-  // No third-party script or model fetch occurs before this explicit user click.
+  // Consent gate already checked, synthetic sample is the only eligible telemetry.
   setStatus('Đang lấy thư viện AI đã chọn; có thể cần tải mô hình vào thiết bị…');
+  modelPhase='IMPORT';
   const {CreateMLCEngine}=await import('https://esm.sh/@mlc-ai/web-llm@0.2.85?bundle');
   if(typeof CreateMLCEngine!=='function')throw Error('Missing WebLLM engine');
+  modelPhase='INFERENCE';
   const result=await generateMemoir(text,{createEngine:CreateMLCEngine,onProgress:setStatus});
   output=result;render();
+  if(isSample)setEvidence(createSyntheticEvidence({mode:'synthetic',
+   modelId:MODEL_ID,gpuAdapter:true,elapsedMs:performance.now()-start,
+   editorial:output.editorial,segments:output.segments}));
   setStatus('Đã biên tập bằng mô hình trên trình duyệt; phải kiểm tra nội dung trước khi dùng.');
  }catch(error){
+  recordFailure(modelPhase==='IMPORT'?'MODEL_IMPORT_FAILED':
+   /invalid_json|invalid_structure|invalid_chapter|unsourced_paragraph|too_long|response_too_large/u.test(String(error?.message||''))?
+   'INVALID_MODEL_OUTPUT':'MODEL_LOAD_OR_GENERATION_FAILED');
   setStatus('Không tạo được bản AI: '+String(error?.message||error).slice(0,220)+
    '. Không có bản giả và không dùng API cloud BuiTai. Thử thiết bị hỗ trợ WebGPU hoặc chờ bản dịch vụ bảo mật.');
  }finally{working=false;controls()}
+});
+$('evidence-download').addEventListener('click',()=>{
+ if(!syntheticFixtureActive||!syntheticEvidence)return;
+ const safe=JSON.stringify(syntheticEvidence,null,2);
+ download(new Blob([safe],{type:'application/json;charset=utf-8'}),
+  'heritage-SYNTHETIC-model-check-no-story.json');
 });
 $('download-draft').addEventListener('click',()=>{
  if(!output)return;
