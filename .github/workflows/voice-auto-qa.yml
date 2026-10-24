@@ -1,9 +1,13 @@
-name: Heritage speech-first demo QA
+name: Heritage voice-to-AI memoir demo QA
 on:
   push:
     branches: [main]
     paths:
       - 'voice-auto.html'
+      - 'memoir-ai.html'
+      - 'memoir-ui.mjs'
+      - 'memoir-ai.mjs'
+      - 'tests/memoir-ai.test.mjs'
       - 'index.html'
       - 'tests/voice-auto.spec.mjs'
       - '.github/workflows/voice-auto-qa.yml'
@@ -27,8 +31,8 @@ jobs:
         run: |
           npm install --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.0
           npx playwright install --with-deps chromium
-      - name: Run browser tests with synthetic microphone and recognition
-        run: node --test tests/voice-auto.spec.mjs
-      - name: Verify shipped HTML has no third-party script or network dependencies
+      - name: Run deterministic editorial contracts and browser tests (mock AI, no model download)
+        run: node --test tests/memoir-ai.test.mjs tests/voice-auto.spec.mjs
+      - name: Verify speech page has no third-party scripts, and editorial page requires consent
         run: |
-          node -e "const fs=require('fs');const x=fs.readFileSync('voice-auto.html','utf8');if(!x.includes('connect-src \'none\'')||!x.includes('processLocally=true')||!x.includes('consent-remote')||!x.includes('CHƯA PHÊ DUYỆT'))process.exit(1)"
+          node -e "const fs=require('fs');const v=fs.readFileSync('voice-auto.html','utf8'),m=fs.readFileSync('memoir-ai.html','utf8'),ui=fs.readFileSync('memoir-ui.mjs','utf8');if(!v.includes('connect-src \'none\'')||!v.includes('processLocally=true')||!v.includes('consent-remote')||!v.includes('to-ai'))process.exit(1);if(!m.includes('allow-model')||!ui.includes('if(working||!$(\'allow-model\').checked)')||!ui.includes('https://esm.sh/@mlc-ai/web-llm@0.2.85?bundle'))process.exit(2);"
