@@ -55,6 +55,12 @@ textarea{min-height:175px;resize:vertical}button:focus-visible,textarea:focus-vi
 <div class="row"><button id="gpu-check" class="secondary" type="button">Kiểm tra máy của tôi (không tải AI)</button><button id="generate" type="button" disabled>AI biên tập thành hồi ký nháp</button></div>
 <p id="gpu-status" class="muted" role="status" aria-live="polite">Chưa kiểm tra adapter WebGPU. Việc có API WebGPU chưa bảo đảm mô hình hoạt động.</p>
 <p id="model-status" class="status" role="status" aria-live="polite">Chưa kiểm tra WebGPU. Chỉ tải mô hình sau khi bạn bấm nút.</p>
+<section id="model-evidence" hidden aria-label="Báo cáo kiểm thử AI bằng câu chuyện mẫu">
+<h3>Kết quả chạy AI thật — chỉ dùng câu chuyện mẫu</h3>
+<p class="muted">Báo cáo chỉ ghi trạng thái tải model, thời gian chạy, số chương/đoạn và số cảnh báo. <strong>Không chứa lời kể, đoạn AI viết, thông tin thiết bị hoặc file âm thanh.</strong> Nó chỉ được tạo nếu anh dùng nút “Thử bằng chuyện mẫu hư cấu”. Bài kiểm thử trình duyệt trên GitHub có dùng mock, không phải bằng chứng suy luận thật.</p>
+<p id="evidence-status" class="status" role="status" aria-live="polite">Chưa có kết quả từ model thật.</p>
+<button id="evidence-download" type="button" class="secondary" disabled>Tải báo cáo chạy AI (không chứa câu chuyện)</button>
+</section>
 </section>
 <section class="card" id="draft-area" hidden>
 <h2>3. Đọc lại và chỉnh sửa bản nháp AI</h2>
