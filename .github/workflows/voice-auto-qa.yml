@@ -35,4 +35,15 @@ jobs:
         run: node --test tests/memoir-ai.test.mjs tests/voice-auto.spec.mjs
       - name: Verify speech page has no third-party scripts, and editorial page requires consent
         run: |
-          node -e "const fs=require('fs');const v=fs.readFileSync('voice-auto.html','utf8'),m=fs.readFileSync('memoir-ai.html','utf8'),ui=fs.readFileSync('memoir-ui.mjs','utf8');if(!v.includes('connect-src \'none\'')||!v.includes('processLocally=true')||!v.includes('consent-remote')||!v.includes('to-ai'))process.exit(1);if(!m.includes('allow-model')||!ui.includes('if(working||!$(\'allow-model\').checked)')||!ui.includes('https://esm.sh/@mlc-ai/web-llm@0.2.85?bundle'))process.exit(2);"
+          node --input-type=module <<'HERITAGE_QA'
+          import {readFileSync} from 'node:fs';
+          const voice=readFileSync('voice-auto.html','utf8');
+          const page=readFileSync('memoir-ai.html','utf8');
+          const ui=readFileSync('memoir-ui.mjs','utf8');
+          if (!voice.includes("connect-src 'none'") ||
+              !voice.includes('processLocally=true') ||
+              !voice.includes('consent-remote') || !voice.includes('to-ai')) process.exit(1);
+          if (!page.includes('allow-model') ||
+              !ui.includes("if(working||!$('allow-model').checked)") ||
+              !ui.includes('https://esm.sh/@mlc-ai/web-llm@0.2.85?bundle')) process.exit(2);
+          HERITAGE_QA
