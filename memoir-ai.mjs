@@ -81,3 +81,48 @@ export async function generateMemoir(source,{createEngine,onProgress=()=>{}}={})
   return {segments,editorial:validateMemoirDraft(text,segments)};
  }finally{try{await engine?.unload?.()}catch{}}
 }
+
+// Cautionary source-alignment cues, NEVER verification of memoir truth.
+// Recomputed after every human edit to prevent stale "no warning" messages.
+export function assessEditedMemoir(editorial,segments){
+ if(!Array.isArray(editorial?.chapters)||!Array.isArray(segments)||!segments.length)
+  err('review_invalid');
+ const byId=new Map(segments.map(s=>[s.id,s.text]));
+ const norm=t=>t.normalize('NFC').toLocaleLowerCase('vi')
+  .replace(/[\p{P}\p{S}]/gu,' ').replace(/\s+/g,' ').trim();
+ const contains=(source,term)=>(' '+norm(source)+' ').includes(' '+norm(term)+' ');
+ const numbers=/(?<![\p{L}\p{N}])\d+(?:[.\/-]\d+)*/gu;
+ const names=/\p{Lu}[\p{L}\p{M}]*(?:[\s-]+\p{Lu}[\p{L}\p{M}]*)*/gu;
+ const common=new Set(['tôi','ông','bà','mẹ','cha','ba','anh','chị','em','và',
+  'nhưng','ngày','năm','lúc','khi','hồi','trong','có','không','tết','một']);
+ const warnings=[];
+ for(let c=0;c<editorial.chapters.length;c++){
+  const chapter=editorial.chapters[c];
+  if(!Array.isArray(chapter.paragraphs))err('review_invalid');
+  for(let p=0;p<chapter.paragraphs.length;p++){
+   const item=chapter.paragraphs[p];
+   if(typeof item?.text!=='string'||!Array.isArray(item.sourceSegmentIds)||
+      !item.sourceSegmentIds.length||item.sourceSegmentIds.some(id=>!byId.has(id)))
+    err('review_invalid');
+   const source=item.sourceSegmentIds.map(id=>byId.get(id)).join(' ');
+   const seen=new Set();
+   for(const term of item.text.match(numbers)||[]){
+    if(!contains(source,term)&&!seen.has('n'+term)){
+     warnings.push({chapter:c,paragraph:p,term,type:'unmatched_number'});seen.add('n'+term);
+    }
+   }
+   for(const match of item.text.matchAll(names)){
+    const term=match[0],prefix=item.text.slice(0,match.index);
+    const sentenceStart=!prefix.trim()||/[.!?\n]\s*$/u.test(prefix);
+    if(common.has(norm(term))||contains(source,term)||
+       (sentenceStart&&!/[\s-]/u.test(term)))continue;
+    if(!seen.has('p'+norm(term))){
+     warnings.push({chapter:c,paragraph:p,term,type:'unmatched_capitalization'});
+     seen.add('p'+norm(term));
+    }
+   }
+   if(warnings.length>=60)return warnings.slice(0,60);
+  }
+ }
+ return warnings;
+}
