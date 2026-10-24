@@ -8,7 +8,7 @@ import {chromium} from 'playwright';
 let browser,server,base;
 before(async()=>{
  server=createServer(async(req,res)=>{
-  if(!['/','/index.html','/voice-auto.html','/memoir-ai.html','/memoir-ui.mjs','/memoir-ai.mjs'].includes(req.url)){res.writeHead(404);res.end();return;}
+  if(!['/','/index.html','/voice-auto.html','/memoir-ai.html','/memoir-ui.mjs','/memoir-ai.mjs','/model-evidence.mjs'].includes(req.url)){res.writeHead(404);res.end();return;}
   const name=req.url==='/'?'index.html':req.url.slice(1);
   const body=await readFile(resolve(name),'utf8');
   res.writeHead(200,{'Content-Type':name.endsWith('.mjs')?'text/javascript; charset=utf-8':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(body);
@@ -219,6 +219,9 @@ test('Qwen engine code and weights do not load until explicit consent+click; AI 
 test('unsupported GPU reports synthetic-only failure and does not request model assets',async()=>{
  const page=await browser.newPage();
  try{
+  await page.addInitScript(()=>Object.defineProperty(navigator,'gpu',{
+   configurable:true,value:undefined
+  }));
   const external=[];
   page.on('request',request=>{if(!request.url().startsWith(base))external.push(request.url())});
   await page.goto(base+'/memoir-ai.html');
