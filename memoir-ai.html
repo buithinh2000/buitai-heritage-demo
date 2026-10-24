@@ -21,6 +21,7 @@ input[type=text],textarea{width:100%;font:16px/1.55 system-ui;border:1px solid #
 textarea{min-height:175px;resize:vertical}button:focus-visible,textarea:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #b1833f;outline-offset:3px}
 .status{background:#eaf3eb;padding:13px;border-radius:9px;min-height:42px}
 #draft-content article{background:#fffefa;border:1px solid #e6e4d8;border-radius:12px;padding:18px;margin:14px 0}
+#draft-content .print-paragraph{display:none}
 #draft-content textarea{min-height:130px}#draft-content .cite{font-size:13px;color:#465a4e}
 #draft-content h3{font:700 24px Georgia,serif;margin:15px 0}
 #draft-content .chapter{padding-top:10px;border-top:1px solid #d1d5cb}
@@ -28,7 +29,7 @@ textarea{min-height:175px;resize:vertical}button:focus-visible,textarea:focus-vi
 #warning-list li{margin:7px 0}.smallcaps{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#996b30}
 [hidden]{display:none!important}
 @media(max-width:640px){main{padding:12px 10px 40px}.hero{padding:22px 17px}.card{padding:18px}.row button{flex:1 1 155px}}
-@media print{header,.hero,#source-area,#model-gate,#draft-actions,#draft-status,#warning-list,.notice,footer,button,.cite{display:none!important}body{background:white}main{max-width:none;padding:0}.card{padding:0;border:0}#draft-content article{border:0;padding:0}#draft-content textarea{border:0;min-height:0;overflow:visible;resize:none}@page{size:A4;margin:18mm}}
+@media print{header,.hero,#source-area,#model-gate,#draft-actions,#draft-status,#warning-list,.notice,footer,button,.cite{display:none!important}body{background:white}main{max-width:none;padding:0}.card{padding:0;border:0}#draft-content article{border:0;padding:0}#draft-content textarea,#draft-content article label{display:none!important}#draft-content .print-paragraph{display:block;white-space:pre-wrap;font:17px/1.8 Georgia,serif;overflow-wrap:anywhere}#draft-content .chapter{break-before:page}@page{size:A4;margin:18mm}}
 </style></head>
 <body><main>
 <header><strong class="brand">BuiTai Heritage</strong><a href="./voice-auto.html">Quay lại trang ghi âm</a><span class="muted">AI WebGPU cục bộ · Thử nghiệm</span></header>
