@@ -1,7 +1,8 @@
-import {generateMemoir,segmentVietnameseNarration,assessEditedMemoir,MODEL_ID} from './memoir-ai.mjs';
+import {generateMemoir,segmentVietnameseNarration,assessEditedMemoir,MODEL_CHOICES} from './memoir-ai.mjs';
 import {SYNTHETIC_STORY,createSyntheticEvidence} from './model-evidence.mjs';
 const $=id=>document.getElementById(id);
 let output=null,working=false,originalSource='',lastGpuCheck=null,
+ selectedModel=MODEL_CHOICES.quality,
  syntheticFixtureActive=false,syntheticEvidence=null;
 function setEvidence(report){
  syntheticEvidence=report;
@@ -28,6 +29,7 @@ function controls(){
  $('narration').disabled=working;$('synthetic').disabled=working;$('erase').disabled=working;
  $('allow-model').disabled=working;
  $('gpu-check').disabled=working;
+ $('model-choice').disabled=working;
 }
 try{
  const handoff=sessionStorage.getItem('heritage-memoir-handoff-v1');
@@ -43,10 +45,15 @@ async function checkWebGpu(){
  }
  try{
   const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
-  lastGpuCheck=!!adapter;
-  $('gpu-status').textContent=adapter?
-   'Có GPU adapter được trình duyệt chấp nhận. Đây mới là bước sơ bộ, không bảo đảm model chạy được. Chưa tải AI.':
-   'Trình duyệt không cấp WebGPU adapter. Không nên tải model. Chưa tải AI.';
+  const needsF16=$('model-choice').value==='quality';
+  const hasF16=!!adapter?.features?.has?.('shader-f16');
+  lastGpuCheck=!!adapter&&(!needsF16||hasF16);
+  $('gpu-status').textContent=!adapter?
+   'Trình duyệt không cấp WebGPU adapter. Không nên tải model. Chưa tải AI.':
+   needsF16&&!hasF16?
+   'Qwen 1.5B cần shader-f16 nhưng GPU không báo hỗ trợ. Có thể chọn bản 0.5B chỉ để thử kỹ thuật, không tự chuyển. Chưa tải model.':
+   'WebGPU adapter đạt kiểm tra sơ bộ cho '+(needsF16?'Qwen 1.5B':'Qwen 0.5B')+
+   '. Chưa tải model; chưa bảo đảm đủ bộ nhớ GPU hoặc suy luận thành công.';
   return lastGpuCheck;
  }catch{
   lastGpuCheck=false;
@@ -61,6 +68,11 @@ $('narration').addEventListener('input',()=>{
  syntheticFixtureActive=false;setEvidence(null);clearResult();controls();
 });
 $('allow-model').addEventListener('change',controls);
+$('model-choice').addEventListener('change',()=>{
+ selectedModel=MODEL_CHOICES[$('model-choice').value]||MODEL_CHOICES.quality;
+ lastGpuCheck=null;clearResult();setEvidence(null);controls();
+ $('gpu-status').textContent='Đã đổi mô hình. Hãy kiểm tra WebGPU trước khi tải; không tự tải model.';
+});
 $('synthetic').addEventListener('click',()=>{
  $('narration').value=SYNTHETIC_STORY;
  syntheticFixtureActive=true;setEvidence(null);
@@ -125,7 +137,7 @@ $('generate').addEventListener('click',async()=>{
  let gpuReady=false,modelPhase='GPU';
  const recordFailure=code=>{
   if(!isSample)return;
-  setEvidence(createSyntheticEvidence({mode:'synthetic',modelId:MODEL_ID,
+  setEvidence(createSyntheticEvidence({mode:'synthetic',modelId:selectedModel,
    gpuAdapter:gpuReady,elapsedMs:performance.now()-start,errorCode:code}));
  };
  if(!await checkWebGpu()){
@@ -147,10 +159,10 @@ $('generate').addEventListener('click',async()=>{
   const {CreateMLCEngine}=await import('https://esm.sh/@mlc-ai/web-llm@0.2.85?bundle');
   if(typeof CreateMLCEngine!=='function')throw Error('Missing WebLLM engine');
   modelPhase='INFERENCE';
-  const result=await generateMemoir(text,{createEngine:CreateMLCEngine,onProgress:setStatus});
+  const result=await generateMemoir(text,{createEngine:CreateMLCEngine,onProgress:setStatus,modelId:selectedModel});
   output=result;render();
   if(isSample)setEvidence(createSyntheticEvidence({mode:'synthetic',
-   modelId:MODEL_ID,gpuAdapter:true,elapsedMs:performance.now()-start,
+   modelId:selectedModel,gpuAdapter:true,elapsedMs:performance.now()-start,
    editorial:output.editorial,segments:output.segments}));
   setStatus('Đã biên tập bằng mô hình trên trình duyệt; phải kiểm tra nội dung trước khi dùng.');
  }catch(error){
@@ -169,7 +181,7 @@ $('evidence-download').addEventListener('click',()=>{
 });
 $('download-draft').addEventListener('click',()=>{
  if(!output)return;
- const payload={status:'NEEDS_NARRATOR_APPROVAL',engine:'browser-webgpu-qwen2.5-0.5b',
+ const payload={status:'NEEDS_NARRATOR_APPROVAL',engine:'browser-webgpu',modelId:selectedModel,
   sourceTranscript:originalSource,sourceSegments:output.segments,
   title:output.editorial.title,chapters:output.editorial.chapters,warnings:output.editorial.warnings,
   notice:'AI output is unverified. Not evidence of consent. Audio original must be reviewed separately.'};
