@@ -1,4 +1,4 @@
-import {generateMemoir,segmentVietnameseNarration} from './memoir-ai.mjs';
+import {generateMemoir,segmentVietnameseNarration,assessEditedMemoir} from './memoir-ai.mjs';
 const $=id=>document.getElementById(id);
 let output=null,working=false,originalSource='';
 function setStatus(x){$('model-status').textContent=x}
@@ -35,6 +35,21 @@ function download(blob,filename){
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;
  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
+function refreshWarnings(){
+ if(!output)return;
+ output.editorial.warnings=assessEditedMemoir(output.editorial,output.segments);
+ const list=$('warning-list');list.replaceChildren();
+ if(output.editorial.warnings.length){
+  for(const w of output.editorial.warnings){
+   const li=document.createElement('li');li.textContent='Chương '+(w.chapter+1)+', đoạn '+(w.paragraph+1)+': '+
+    (w.type==='unmatched_number'?'Số':'Tên riêng/chữ hoa')+' “'+w.term+'” không có trong câu nguồn đã trích. Cần nghe lại audio gốc.';
+   list.append(li);
+  }
+ }else{
+  const li=document.createElement('li');li.textContent='Không tìm thấy tên/số lạ theo phép kiểm tra hạn chế. KHÔNG chứng minh AI hoặc nội dung đã sửa là đúng.';
+  list.append(li);
+ }
+}
 function render(){
  const root=$('draft-content');root.replaceChildren();
  const heading=document.createElement('h2');heading.textContent=output.editorial.title;root.append(heading);
@@ -50,6 +65,7 @@ function render(){
    const printable=document.createElement('p');printable.className='print-paragraph';printable.textContent=p.text;
    area.addEventListener('input',()=>{
     p.text=area.value;printable.textContent=area.value;
+    refreshWarnings();
     $('draft-status').textContent='Đã sửa bản nháp. VẪN CHƯA PHÊ DUYỆT.';
    });
    const cite=document.createElement('p');cite.className='cite';cite.textContent='Nguồn: '+p.sourceSegmentIds.map(id=>id+': '+sources.get(id)).join(' | ');
@@ -57,13 +73,7 @@ function render(){
   }
   root.append(group);
  }
- const list=$('warning-list');list.replaceChildren();
- if(output.editorial.warnings.length){
-  for(const w of output.editorial.warnings){
-   const li=document.createElement('li');li.textContent='Chương '+(w.chapter+1)+', đoạn '+(w.paragraph+1)+': số “'+w.term+'” không thấy ở câu nguồn được trích. Cần nghe lại.';
-   list.append(li);
-  }
- }else{const li=document.createElement('li');li.textContent='Không thấy số đáng ngờ theo phép kiểm tra hạn chế. KHÔNG có nghĩa bản AI đã đúng.';list.append(li)}
+ refreshWarnings();
  $('draft-status').textContent='AI đã tạo bản nháp có dẫn nguồn. Cần kiểm tra từng câu với người kể.';
  $('draft-area').hidden=false;
  $('draft-area').scrollIntoView({block:'start',behavior:'smooth'});
