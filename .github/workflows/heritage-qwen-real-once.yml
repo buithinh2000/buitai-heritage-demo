@@ -1,4 +1,4 @@
-name: Heritage single-use REAL Qwen Vietnamese CPU evidence
+name: Heritage bounded REAL Qwen Vietnamese CPU evidence
 on:
   push:
     branches: [main]
@@ -82,28 +82,45 @@ jobs:
           import json,re,pathlib
           text=pathlib.Path('real_qwen_output.txt').read_text(encoding='utf8',errors='replace')
           clean=re.sub(r'\x1b\[[0-9;]*m','',text)
-          draft=None
+          # llama-cli echoes the input prompt; FIRST parseable JSON is the
+          # EXAMPLE schema in the prompt. Always prefer the LAST generated object.
+          candidates=[]
           for m in re.finditer(r'\{',clean):
            try:
             obj,_=json.JSONDecoder().raw_decode(clean[m.start():])
             if isinstance(obj,dict) and 'chapters' in obj:
-             draft=obj
-             break
+             candidates.append(obj)
            except (ValueError,TypeError):
             pass
+          draft=candidates[-1] if candidates else None
           chapters=draft.get('chapters',[]) if isinstance(draft,dict) else []
           paras=[p for ch in chapters if isinstance(ch,dict) and isinstance(ch.get('paragraphs'),list) for p in ch['paragraphs'] if isinstance(p,dict)]
           sourceids={'seg-001','seg-002','seg-003'}
           cites=bool(paras) and all(isinstance(p.get('sourceSegmentIds'),list) and len(p['sourceSegmentIds']) and all(x in sourceids for x in p['sourceSegmentIds']) for p in paras)
           prose=' '.join(str(p.get('text','')) for p in paras)
-          evidence={'schema':'heritage.actual-gguf-cpu-smoke.v1','synthetic_only':True,
+          # An ID can exist and still cite the WRONG segment. Count obviously
+          # unsupported cross-segment details in the invented 3-line story.
+          detail_source={'Cần Thơ':'seg-001','bánh tét':'seg-002','1985':'seg-003'}
+          cross_segment_mismatches=[
+           {'paragraph':i,'term':term,'required_source_id':required}
+           for i,p in enumerate(paras)
+           for term,required in detail_source.items()
+           if term.lower() in str(p.get('text','')).lower()
+           and required not in p.get('sourceSegmentIds',[])
+          ]
+          unique_paragraphs=len(set(str(p.get('text','')).strip() for p in paras))
+          evidence={'schema':'heritage.actual-gguf-cpu-smoke.v2','synthetic_only':True,
             'runtime':'llama.cpp CPU b11860', 'model':'Qwen2.5-0.5B-Instruct-GGUF Q4_K_M',
             'model_executed':bool(clean.strip()),'parsed_json':isinstance(draft,dict),
+            'parsed_json_candidates':len(candidates),
             'valid_source_ids':cites,'chapters':len(chapters),'paragraphs':len(paras),
+            'unique_paragraph_texts':unique_paragraphs,
+            'unsupported_cross_segment_details':len(cross_segment_mismatches),
+            'mismatch_examples':cross_segment_mismatches[:6],
             'contains_source_place_can_tho':'Cần Thơ' in prose,
             'contains_source_year_1985':'1985' in prose,
             'invented_year_1975':bool(re.search(r'(?<!\d)1975(?!\d)',prose)),
-            'note':'REAL GGUF CPU generated content. This is NOT WebLLM WebGPU inference or factual approval.'}
+            'note':'REAL GGUF CPU generated text parsed from LAST JSON (not prompt example). A citation ID can be syntactically valid while referencing wrong segment. NOT WebGPU or factual approval.'}
           pathlib.Path('real_qwen_evidence.json').write_text(json.dumps(evidence,ensure_ascii=False,indent=2),encoding='utf8')
           print('REAL MODEL EVIDENCE:',json.dumps(evidence,ensure_ascii=False))
           print('SYNTHETIC MODEL OUTPUT: '+clean.strip()[:2800])
