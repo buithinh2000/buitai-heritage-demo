@@ -97,8 +97,9 @@ audio{width:100%;margin:12px 0}
 <button id="preview" disabled>Xem bản sách nháp</button>
 <button id="download-text" class="secondary" disabled>Tải lời kể .txt</button>
 <button id="print" class="secondary" disabled>In / Lưu PDF</button>
+<button id="to-ai" type="button" disabled>AI viết thành hồi ký có chương (thử nghiệm)</button>
 </div>
-<p class="notice">Ở bản dùng thử này, sách nháp <strong>giữ nguyên nội dung lời kể sau khi bạn chỉnh sửa</strong>, chưa được AI ngôn ngữ biên tập thành các chương hồi ký. AI Whisper/Ollama thật vẫn đang kiểm thử ở ứng dụng cục bộ riêng; website này không giả lập kết quả AI biên tập.</p>
+<p class="notice">Bản sách phía dưới chỉ chép lại nguyên văn. Để thử <strong>AI biên tập thực sự thành các chương</strong>, hãy bấm nút AI ở trên. Trang riêng có thể tải thư viện/mô hình từ bên thứ ba về thiết bị sau khi bạn đồng ý; cần máy hỗ trợ WebGPU. Đây là thử nghiệm, chưa có bảo đảm chất lượng tiếng Việt hoặc quyền riêng tư cho dữ liệu nhạy cảm. AI Whisper/Ollama chất lượng cao vẫn đang kiểm thử riêng.</p>
 <div id="book" hidden aria-label="Bản sách nháp không do AI viết lại">
 <h3 id="book-title"></h3>
 <p id="book-byline" class="hint"></p>
@@ -133,6 +134,7 @@ function syncButtons(){
  $('preview').disabled=!readText()||speechActive||recording;
  $('download-text').disabled=!readText()||speechActive||recording;
  $('print').disabled=!readText()||speechActive||recording;
+ $('to-ai').disabled=!readText()||speechActive||recording||closing;
 }
 function updateTranscript(){
  if(!speechActive)return;
@@ -307,6 +309,15 @@ $('download-text').addEventListener('click',()=>{
  download(new Blob([body],{type:'text/plain;charset=utf-8'}),'heritage-hoi-ky-chua-duyet.txt');
 });
 $('print').addEventListener('click',()=>{if(fillBook())window.print()});
+$('to-ai').addEventListener('click',()=>{
+ const text=readText();
+ if(!text||speechActive||recording||closing)return;
+ try{
+  // User-initiated same-origin TAB session handoff, not query params or network.
+  sessionStorage.setItem('heritage-memoir-handoff-v1',JSON.stringify({text}));
+  location.assign('./memoir-ai.html');
+ }catch{status('Không chuyển được bản chép lời qua phiên trình duyệt. Hãy tải TXT riêng và dán thủ công vào trang AI thử nghiệm.');}
+});
 window.addEventListener('beforeprint',fillBook);
 window.addEventListener('beforeunload',event=>{
  if(audio||speechActive||readText()){event.preventDefault();event.returnValue=''}
