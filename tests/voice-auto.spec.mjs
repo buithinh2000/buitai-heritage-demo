@@ -8,10 +8,10 @@ import {chromium} from 'playwright';
 let browser,server,base;
 before(async()=>{
  server=createServer(async(req,res)=>{
-  if(!['/','/index.html','/voice-auto.html'].includes(req.url)){res.writeHead(404);res.end();return;}
+  if(!['/','/index.html','/voice-auto.html','/memoir-ai.html','/memoir-ui.mjs','/memoir-ai.mjs'].includes(req.url)){res.writeHead(404);res.end();return;}
   const name=req.url==='/'?'index.html':req.url.slice(1);
   const body=await readFile(resolve(name),'utf8');
-  res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(body);
+  res.writeHead(200,{'Content-Type':name.endsWith('.mjs')?'text/javascript; charset=utf-8':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(body);
  });
  await new Promise(done=>server.listen(0,'127.0.0.1',done));
  base='http://127.0.0.1:'+server.address().port;
@@ -124,5 +124,63 @@ test('unsupported browser cannot fake recognition output',async()=>{
   assert.equal(await page.locator('#start').isDisabled(),true);
   assert.match(await page.locator('#record-status').textContent(),/Không hỗ trợ/);
   assert.equal(await page.locator('#transcript').inputValue(),'');
+ }finally{await page.close()}
+});
+
+test('voice transcript crosses to on-device memoir editor using one-time session storage, no query leak',async()=>{
+ const {page,requests}=await pageFor('local');
+ try{
+  await page.locator('#consent-record').check();
+  await page.locator('#start').click();
+  await page.waitForFunction(()=>document.getElementById('transcript').value.includes('Huế'));
+  await page.locator('#stop').click();
+  await page.waitForFunction(()=>!document.getElementById('to-ai').disabled);
+  await page.locator('#to-ai').click();
+  await page.waitForURL('**/memoir-ai.html');
+  assert.match(await page.locator('#narration').inputValue(),/Tôi lớn lên ở Huế/);
+  assert.equal(await page.evaluate(()=>sessionStorage.getItem('heritage-memoir-handoff-v1')),null);
+  assert.equal(await page.locator('#generate').isDisabled(),true);
+  assert.equal(requests.length,0);
+ }finally{await page.close()}
+});
+test('Qwen engine code and weights do not load until explicit consent+click; AI result is always unapproved',async()=>{
+ const page=await browser.newPage({acceptDownloads:true});
+ try{
+  await page.addInitScript(()=>Object.defineProperty(navigator,'gpu',{
+   configurable:true,value:{requestAdapter:async()=>({})}
+  }));
+  const external=[];
+  page.on('request',req=>{if(!req.url().startsWith(base))external.push(req.url())});
+  const memoir={title:'Một ngày Tết',chapters:[{
+   title:'Kỷ niệm',paragraphs:[{text:'Tôi lớn lên ở Huế bên ông bà.',
+    sourceSegmentIds:['seg-001']}]
+  }]};
+  const payload=JSON.stringify(memoir);
+  await page.route('https://esm.sh/**',route=>route.fulfill({
+   status:200,contentType:'application/javascript',
+   headers:{'Access-Control-Allow-Origin':'*'},
+   body:'export async function CreateMLCEngine(){return {chat:{completions:{create:async()=>({choices:[{message:{content:'+JSON.stringify(payload)+'}}]})}},unload:async()=>{}}}'
+  }));
+  await page.goto(base+'/memoir-ai.html');
+  await page.locator('#synthetic').click();
+  assert.equal(external.length,0,'No model or external library before user initiation');
+  assert.equal(await page.locator('#generate').isDisabled(),true);
+  await page.locator('#allow-model').check();
+  assert.equal(await page.locator('#generate').isEnabled(),true);
+  await page.locator('#generate').click();
+  await page.locator('#draft-area').waitFor({state:'visible'});
+  assert.match(await page.locator('#draft-content').innerText(),/Một ngày Tết/);
+  assert.match(await page.locator('#draft-status').innerText(),/Cần kiểm tra/);
+  const downloadEvent=page.waitForEvent('download');
+  await page.locator('#download-draft').click();
+  const downloaded=await downloadEvent;
+  assert.match(downloaded.suggestedFilename(),/UNAPPROVED/);
+  const data=JSON.parse(await readFile(await downloaded.path(),'utf8'));
+  assert.equal(data.status,'NEEDS_NARRATOR_APPROVAL');
+  assert.ok(data.sourceTranscript.includes('Cần Thơ'));
+  assert.equal(external.length,1,'Only stubbed model loader request in browser QA');
+  await page.locator('#erase').click();
+  assert.equal(await page.locator('#narration').inputValue(),'');
+  assert.equal(await page.locator('#draft-area').isHidden(),true);
  }finally{await page.close()}
 });
