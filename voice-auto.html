@@ -98,6 +98,7 @@ audio{width:100%;margin:12px 0}
 <button id="download-text" class="secondary" disabled>Tải lời kể .txt</button>
 <button id="print" class="secondary" disabled>In / Lưu PDF</button>
 <button id="to-ai" type="button" disabled>AI viết thành hồi ký có chương (thử nghiệm)</button>
+<p class="hint">Nếu đã ghi âm, hãy <strong>tải giọng nói gốc về máy trước khi mở AI</strong>. Chỉ transcript được chuyển sang trang AI; file audio không đi theo.</p>
 </div>
 <p class="notice">Bản sách phía dưới chỉ chép lại nguyên văn. Để thử <strong>AI biên tập thực sự thành các chương</strong>, hãy bấm nút AI ở trên. Trang riêng có thể tải thư viện/mô hình từ bên thứ ba về thiết bị sau khi bạn đồng ý; cần máy hỗ trợ WebGPU. Đây là thử nghiệm, chưa có bảo đảm chất lượng tiếng Việt hoặc quyền riêng tư cho dữ liệu nhạy cảm. AI Whisper/Ollama chất lượng cao vẫn đang kiểm thử riêng.</p>
 <div id="book" hidden aria-label="Bản sách nháp không do AI viết lại">
@@ -115,11 +116,11 @@ const $=id=>document.getElementById(id);
 const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
 const MAX_MS=90000;
 let recognition=null,recorder=null,stream=null,parts=[],audio=null,audioUrl=null;
-let speechActive=false,recording=false,closing=false,sessionTimer=null,startedAt=0,epoch=0,starting=false;
+let speechActive=false,recording=false,closing=false,sessionTimer=null,startedAt=0,epoch=0,starting=false,voiceBackupRequested=false;
 let finals=[],interim='',recognized=false,finalError='';
 function status(message){$('record-status').textContent=message}
 function stopTracks(){if(stream){for(const t of stream.getTracks())t.stop();stream=null}}
-function revokeAudio(){if(audioUrl)URL.revokeObjectURL(audioUrl);audioUrl=null;audio=null;$('playback').removeAttribute('src');$('playback').load();$('playback').hidden=true}
+function revokeAudio(){voiceBackupRequested=false;if(audioUrl)URL.revokeObjectURL(audioUrl);audioUrl=null;audio=null;$('playback').removeAttribute('src');$('playback').load();$('playback').hidden=true}
 function stopTimer(){if(sessionTimer){clearTimeout(sessionTimer);sessionTimer=null}}
 function readText(){return $('transcript').value.trim()}
 function syncButtons(){
@@ -287,6 +288,8 @@ $('download-audio').addEventListener('click',()=>{
  if(!audio)return;
  const t=audio.type;
  download(audio,'heritage-giong-noi-goc.'+(t.includes('mp4')?'m4a':t.includes('ogg')?'ogg':'webm'));
+ voiceBackupRequested=true;
+ status('Đã yêu cầu trình duyệt tải giọng nói gốc. Hãy kiểm tra thư mục Downloads trước khi mở AI.');
 });
 function download(blob,name){
  const a=document.createElement('a'),url=URL.createObjectURL(blob);
@@ -312,6 +315,10 @@ $('print').addEventListener('click',()=>{if(fillBook())window.print()});
 $('to-ai').addEventListener('click',()=>{
  const text=readText();
  if(!text||speechActive||recording||closing)return;
+ if(audio&&!voiceBackupRequested){
+  status('Trước khi qua AI, hãy bấm “Tải giọng nói gốc” rồi kiểm tra file đã lưu. Không gửi file ghi âm vào AI thử nghiệm.');
+  $('download-audio').focus();return;
+ }
  try{
   // User-initiated same-origin TAB session handoff, not query params or network.
   sessionStorage.setItem('heritage-memoir-handoff-v1',JSON.stringify({text}));
