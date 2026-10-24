@@ -1,6 +1,6 @@
 import {generateMemoir,segmentVietnameseNarration,assessEditedMemoir} from './memoir-ai.mjs';
 const $=id=>document.getElementById(id);
-let output=null,working=false,originalSource='';
+let output=null,working=false,originalSource='',lastGpuCheck=null;
 function setStatus(x){$('model-status').textContent=x}
 function clearResult(){
  output=null;$('draft-area').hidden=true;$('draft-content').replaceChildren();
@@ -11,6 +11,7 @@ function controls(){
  $('generate').disabled=working||!$('allow-model').checked||v.trim().length<25||v.length>5000;
  $('narration').disabled=working;$('synthetic').disabled=working;$('erase').disabled=working;
  $('allow-model').disabled=working;
+ $('gpu-check').disabled=working;
 }
 try{
  const handoff=sessionStorage.getItem('heritage-memoir-handoff-v1');
@@ -18,6 +19,26 @@ try{
  if(handoff&&handoff.length<=5500){const j=JSON.parse(handoff);if(typeof j?.text==='string'&&j.text.length<=5000)$('narration').value=j.text}
 }catch{try{sessionStorage.removeItem('heritage-memoir-handoff-v1')}catch{}}
 controls();
+async function checkWebGpu(){
+ if(!navigator.gpu?.requestAdapter){
+  lastGpuCheck=false;
+  $('gpu-status').textContent='Không có WebGPU trên trình duyệt này. Chưa tải gì.';
+  return false;
+ }
+ try{
+  const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+  lastGpuCheck=!!adapter;
+  $('gpu-status').textContent=adapter?
+   'Có GPU adapter được trình duyệt chấp nhận. Đây mới là bước sơ bộ, không bảo đảm model chạy được. Chưa tải AI.':
+   'Trình duyệt không cấp WebGPU adapter. Không nên tải model. Chưa tải AI.';
+  return lastGpuCheck;
+ }catch{
+  lastGpuCheck=false;
+  $('gpu-status').textContent='Kiểm tra GPU thất bại. Không tải model; có thể do quyền/driver/hệ điều hành.';
+  return false;
+ }
+}
+$('gpu-check').addEventListener('click',checkWebGpu);
 if(!navigator.gpu)setStatus('Thiết bị chưa báo hỗ trợ WebGPU. AI trên trình duyệt nhiều khả năng không chạy được; không tự gửi transcript lên máy chủ.');
 else setStatus('Có API WebGPU. Chưa tải model; hãy thử bằng dữ liệu hư cấu trước.');
 $('narration').addEventListener('input',()=>{clearResult();controls()});
@@ -80,7 +101,9 @@ function render(){
 }
 $('generate').addEventListener('click',async()=>{
  if(working||!$('allow-model').checked)return;
- if(!navigator.gpu){setStatus('Không có WebGPU. Không thể chạy AI cục bộ trên trình duyệt này.');return}
+ if(!await checkWebGpu()){
+  setStatus('Không có WebGPU adapter sử dụng được. Không tải thư viện hoặc model.');return;
+ }
  const text=$('narration').value.trim();
  try{segmentVietnameseNarration(text)}catch{setStatus('Lời kể quá ngắn, dài hoặc quá nhiều đoạn để thử model nhỏ.');return}
  working=true;controls();clearResult();
