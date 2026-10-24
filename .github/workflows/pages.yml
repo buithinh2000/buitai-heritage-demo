@@ -5,6 +5,9 @@ on:
     paths:
       - 'index.html'
       - 'voice-auto.html'
+      - 'memoir-ai.html'
+      - 'memoir-ui.mjs'
+      - 'memoir-ai.mjs'
       - 'transcript-review.html'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
@@ -30,12 +33,18 @@ jobs:
         run: |
           mkdir -p public
           # Explicit public-only allowlist: no private model files or recordings.
-          cp index.html voice-auto.html transcript-review.html public/
-          test "$(find public -type f | wc -l)" -eq 3
+          cp index.html voice-auto.html transcript-review.html memoir-ai.html memoir-ui.mjs memoir-ai.mjs public/
+          test "$(find public -type f | wc -l)" -eq 6
           test -s public/index.html
           test -s public/voice-auto.html
           test -s public/transcript-review.html
+          test -s public/memoir-ai.html
+          test -s public/memoir-ui.mjs
+          test -s public/memoir-ai.mjs
           ! grep -F 'http://127.0.0.1:11434' public/voice-auto.html
+          ! grep -F 'http://127.0.0.1:11434' public/memoir-ai.html
+          grep -F 'allow-model' public/memoir-ai.html
+          grep -F 'NEEDS_NARRATOR_APPROVAL' public/memoir-ai.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
