@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {MODEL_ID,segmentVietnameseNarration,makeEditorialPrompt,validateMemoirDraft,generateMemoir}
+import {MODEL_ID,segmentVietnameseNarration,makeEditorialPrompt,validateMemoirDraft,generateMemoir,assessEditedMemoir}
  from '../memoir-ai.mjs';
 
 const speech='Tôi sống ở Huế với bà ngoại. Tết đến cả nhà gói bánh. Tôi không nhớ ngày nào.';
@@ -67,4 +67,17 @@ test('AI failure never fabricates a success memoir',async()=>{
    unload:async()=>{unloaded=true}
   })}),/invalid_json/);
  assert.equal(unloaded,true);
+});
+
+test('post-edit warning recalculation flags unsupported years and proper names without approval',()=>{
+ const {segments,result}=sample();
+ result.chapters[0].paragraphs[0].text='Năm 1975 tôi đã tới Đà Nẵng.';
+ const cues=assessEditedMemoir(result,segments);
+ assert.ok(cues.some(w=>w.term==='1975'&&w.type==='unmatched_number'));
+ assert.ok(cues.some(w=>w.term==='Đà Nẵng'&&w.type==='unmatched_capitalization'));
+ result.chapters[0].paragraphs[0].text='Tôi sống ở Huế với bà ngoại.';
+ const after=assessEditedMemoir(result,segments);
+ assert.equal(after.some(w=>w.term==='1975'),false);
+ assert.equal(after.some(w=>w.term==='Đà Nẵng'),false);
+ assert.equal(result.chapters[0].paragraphs[0].sourceSegmentIds[0],'seg-001');
 });
