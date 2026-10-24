@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; media-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<title>Heritage — Kể chuyện, tự chép lời tiếng Việt</title>
+<style>
+:root{font:16px system-ui,-apple-system,sans-serif;color:#253b30;background:#f5f2eb}
+*{box-sizing:border-box}body{margin:0}main{max-width:920px;margin:auto;padding:20px 16px 72px}
+header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px}
+.brand{font-weight:800;letter-spacing:-.4px;color:#234b3b}a{color:#20503a}
+.hero{background:#dfe9df;padding:30px;border-radius:20px;margin-bottom:18px}
+h1{font-size:clamp(29px,5vw,45px);line-height:1.18;margin:5px 0 12px;letter-spacing:-.7px}
+h2{font-size:21px;margin:0 0 12px}h3{font-size:17px}p{line-height:1.6}
+.card{background:#fff;border:1px solid #e1dfd6;border-radius:18px;padding:25px;margin-bottom:18px}
+.pill{font-size:12px;background:#edf1e9;border-radius:30px;padding:8px 12px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}
+.step{border:1px solid #b0c7b6;background:#f6fbf6;border-radius:12px;padding:12px;font-size:13px}
+.step strong{display:block;font-size:15px;margin-bottom:4px}
+label{display:block;font-weight:600;margin:14px 0 7px}
+label.check{display:flex;align-items:flex-start;gap:10px;font-weight:400;line-height:1.5}
+input[type=checkbox]{width:19px;height:19px;flex:none;margin-top:3px}
+input[type=text],textarea,select{width:100%;font:16px system-ui;border:1px solid #bdcbbf;border-radius:10px;padding:12px;background:#fff}
+textarea{min-height:145px;line-height:1.65;resize:vertical}
+button{font:650 15px system-ui;cursor:pointer;background:#224f3a;color:#fff;border:0;border-radius:10px;padding:13px 16px;min-height:48px}
+button.secondary{background:#e8efe9;color:#274330}button:disabled{opacity:.48;cursor:not-allowed}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #c39230;outline-offset:3px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0}
+.hint{font-size:14px;color:#5e6c63}.notice{padding:12px 15px;background:#fff5df;border-left:4px solid #bb8748;border-radius:7px}
+.status{background:#f0f5f0;border-radius:10px;padding:13px;min-height:48px}
+#interim{color:#687c70;font-style:italic;min-height:30px}
+#book{padding:30px;background:#fffefb;border:1px solid #d4d6cc;border-radius:12px;min-height:140px;white-space:pre-wrap;line-height:1.8;overflow-wrap:anywhere}
+#book h3{text-align:center;font:700 28px Georgia,serif}#book p{white-space:pre-wrap}
+audio{width:100%;margin:12px 0}
+[hidden]{display:none!important}
+@media(max-width:640px){main{padding:12px 10px 45px}.hero{padding:23px 18px}.card{padding:18px}.steps{grid-template-columns:1fr}.row button{flex:1 1 140px}header{flex-wrap:wrap}}
+@media print{header,.hero,#consent-card,#record-card,#editor-card .controls,.notice,.hint,.status,footer,audio,button{display:none!important}main{padding:0;max-width:none}.card{padding:0;border:0}#editor-card>h2,#editor-card>label,#editor-card>textarea,#editor-card>#interim,#editor-card>.row{display:none!important}#book{border:0;min-height:0}@page{size:A4;margin:18mm}}
+</style>
+</head>
+<body><main>
+<header><span class="brand">BuiTai Heritage</span><a href="./index.html">Trang Heritage chính</a><span class="pill">Thử nghiệm · Không có tài khoản</span></header>
+<section class="hero">
+<p class="pill" style="display:inline-block">Trải nghiệm mới · Voice-first</p>
+<h1>Chỉ cần kể chuyện. Chữ hiện ra tự động.</h1>
+<p>Nói bằng tiếng Việt, đọc lại bản chép lời, rồi lưu bản sách nháp. Không bắt buộc tự đánh máy từ đầu.</p>
+<div class="steps">
+<div class="step"><strong>1 · Chọn chế độ</strong>Hiểu rõ quyền riêng tư trước khi ghi âm</div>
+<div class="step"><strong>2 · Kể chuyện</strong>Nhận dạng lời nói ngay khi bạn kể</div>
+<div class="step"><strong>3 · Xem lại</strong>Sửa chữ sai, lưu âm thanh và bản nháp</div>
+</div>
+</section>
+<section class="card" id="consent-card">
+<h2>1. Quyền riêng tư và cách nhận dạng</h2>
+<p class="notice"><strong>Quan trọng:</strong> Website BuiTai không tải hoặc lưu file âm thanh trên máy chủ. Tuy nhiên, <strong>dịch vụ nhận dạng giọng nói của trình duyệt có thể gửi âm thanh đến nhà cung cấp trình duyệt</strong> nếu bạn chọn chế độ dịch vụ. Không dùng chuyện riêng nhạy cảm khi chưa hiểu điều này.</p>
+<label for="recognition-mode">Chế độ nhận dạng</label>
+<select id="recognition-mode">
+<option value="local">Ưu tiên xử lý trên thiết bị — nếu trình duyệt hỗ trợ tiếng Việt</option>
+<option value="browser">Dịch vụ của trình duyệt — có thể gửi giọng nói đến nhà cung cấp</option>
+</select>
+<p id="mode-note" class="hint" role="status" aria-live="polite">Đang kiểm tra khả năng nhận dạng tiếng Việt trực tiếp trên thiết bị…</p>
+<label class="check"><input type="checkbox" id="consent-record"><span>Tôi là người kể hoặc đã được người kể đồng ý rõ ràng để ghi âm và thử chức năng nhận dạng.</span></label>
+<label class="check" id="remote-label" hidden><input type="checkbox" id="consent-remote"><span>Tôi hiểu và đồng ý rằng chế độ này có thể gửi giọng nói đến <strong>dịch vụ của nhà cung cấp trình duyệt</strong>, bên ngoài BuiTai, để chuyển thành chữ.</span></label>
+<p class="hint">Chế độ trên thiết bị chỉ hoạt động nếu trình duyệt hỗ trợ gói tiếng Việt. Không có tải model hoặc API trả phí của BuiTai.</p>
+</section>
+<section class="card" id="record-card">
+<h2>2. Kể chuyện bằng giọng nói</h2>
+<label for="prompt">Bạn có thể bắt đầu với câu hỏi này</label>
+<select id="prompt">
+<option>Ông bà lớn lên ở đâu? Kỷ niệm tuổi thơ nào nhớ nhất?</option>
+<option>Tết ngày xưa trong gia đình mình có gì đặc biệt?</option>
+<option>Lần đầu ông bà gặp nhau như thế nào?</option>
+<option>Bài học nào ông bà muốn để lại cho con cháu?</option>
+</select>
+<div class="row">
+<button id="start" disabled>Bắt đầu kể chuyện</button>
+<button id="stop" class="secondary" disabled>Dừng và xem lại</button>
+<button id="clear" class="secondary" type="button" disabled>Xóa phiên</button>
+</div>
+<p id="record-status" class="status" role="status" aria-live="polite">Đang kiểm tra trình duyệt…</p>
+<p id="interim" aria-live="off"></p>
+<audio id="playback" controls hidden></audio>
+<div class="row"><button id="download-audio" class="secondary" disabled>Tải giọng nói gốc</button></div>
+<p class="hint">Giới hạn mỗi lần tối đa 90 giây. Bản ghi và bản chép lời chỉ giữ trong phiên trang; hãy tải về trước khi rời trang. Kết quả ASR có thể thiếu câu hoặc nghe sai tên riêng.</p>
+</section>
+<section class="card" id="editor-card">
+<h2>3. Xem lại lời kể và lưu hồi ký nháp</h2>
+<label for="transcript">Lời kể đã được nhận dạng (có thể chỉnh sửa)</label>
+<textarea id="transcript" placeholder="Khi trình duyệt nhận dạng được tiếng Việt, lời kể sẽ xuất hiện ở đây. Không cần chép tay từ đầu." spellcheck="true" disabled></textarea>
+<p class="hint">Nội dung này là <strong>bản chép lời chưa được xác minh</strong>. Nghe lại file gốc và chỉnh sửa tên, ngày tháng, địa điểm trước khi chia sẻ.</p>
+<label for="story-title">Tiêu đề cuốn hồi ký</label>
+<input type="text" id="story-title" value="Một kỷ niệm gia đình" maxlength="120">
+<label for="narrator">Người kể (không bắt buộc)</label>
+<input type="text" id="narrator" placeholder="Ví dụ: Bà ngoại" maxlength="120">
+<div class="row controls">
+<button id="preview" disabled>Xem bản sách nháp</button>
+<button id="download-text" class="secondary" disabled>Tải lời kể .txt</button>
+<button id="print" class="secondary" disabled>In / Lưu PDF</button>
+</div>
+<p class="notice">Ở bản dùng thử này, sách nháp <strong>giữ nguyên nội dung lời kể sau khi bạn chỉnh sửa</strong>, chưa được AI ngôn ngữ biên tập thành các chương hồi ký. AI Whisper/Ollama thật vẫn đang kiểm thử ở ứng dụng cục bộ riêng; website này không giả lập kết quả AI biên tập.</p>
+<div id="book" hidden aria-label="Bản sách nháp không do AI viết lại">
+<h3 id="book-title"></h3>
+<p id="book-byline" class="hint"></p>
+<p id="book-body"></p>
+<p class="hint"><strong>BẢN NHÁP CHƯA PHÊ DUYỆT.</strong> Kiểm tra với âm thanh gốc trước khi chia sẻ.</p>
+</div>
+</section>
+<footer class="hint">BuiTai Heritage · Demo công khai, chưa có quản lý tài khoản, phê duyệt danh tính hoặc lưu trữ lâu dài. Không dùng bản này để lưu hồ sơ nhạy cảm.</footer>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const Rec=window.SpeechRecognition||window.webkitSpeechRecognition;
+const MAX_MS=90000;
+let recognition=null,recorder=null,stream=null,parts=[],audio=null,audioUrl=null;
+let speechActive=false,recording=false,closing=false,sessionTimer=null,startedAt=0;
+let finals=[],interim='',recognized=false,finalError='';
+function status(message){$('record-status').textContent=message}
+function stopTracks(){if(stream){for(const t of stream.getTracks())t.stop();stream=null}}
+function revokeAudio(){if(audioUrl)URL.revokeObjectURL(audioUrl);audioUrl=null;audio=null;$('playback').removeAttribute('src');$('playback').load();$('playback').hidden=true}
+function stopTimer(){if(sessionTimer){clearTimeout(sessionTimer);sessionTimer=null}}
+function readText(){return $('transcript').value.trim()}
+function syncButtons(){
+ const remote=$('recognition-mode').value==='browser';
+ $('remote-label').hidden=!remote;
+ const allowed=$('consent-record').checked&&(!remote||$('consent-remote').checked);
+ $('start').disabled=!Rec||!allowed||speechActive||recording||closing||!$('start').dataset.supported;
+ $('stop').disabled=!speechActive&&!recording;
+ $('clear').disabled=!audio&&!readText()&&!speechActive;
+ $('download-audio').disabled=!audio;
+ $('transcript').disabled=speechActive||recording;
+ $('preview').disabled=!readText()||speechActive||recording;
+ $('download-text').disabled=!readText()||speechActive||recording;
+ $('print').disabled=!readText()||speechActive||recording;
+}
+function updateTranscript(){
+ if(!speechActive)return;
+ $('transcript').value=finals.filter(Boolean).join(' ').trim();
+ $('interim').textContent=interim?('Đang nghe: '+interim):'';
+ syncButtons();
+}
+async function modeReadiness(){
+ $('start').dataset.supported='';
+ if(!Rec){
+  $('mode-note').textContent='Trình duyệt này không hỗ trợ nhận dạng giọng nói trên trang web. Hãy thử Chrome/Edge bản mới.';
+  status('Không hỗ trợ nhận dạng tự động trên trình duyệt này.');
+  syncButtons();return;
+ }
+ if($('recognition-mode').value==='browser'){
+  $('mode-note').textContent='Cần đồng ý riêng: trình duyệt có thể truyền âm thanh tới máy chủ của nhà cung cấp. BuiTai không nhận file hoặc transcript.';
+  $('start').dataset.supported='yes';status('Sẵn sàng khi đã xác nhận đồng ý.');syncButtons();return;
+ }
+ if(!('available' in Rec)||!('install' in Rec)){
+  $('mode-note').textContent='Trình duyệt chưa cung cấp nhận dạng tiếng Việt trực tiếp trên thiết bị. Không tự chuyển sang dịch vụ mạng.';
+  status('Chọn dịch vụ trình duyệt nếu đồng ý rủi ro gửi âm thanh, hoặc dùng ứng dụng cục bộ Heritage.');
+  syncButtons();return;
+ }
+ try{
+  const state=await Rec.available({langs:['vi-VN'],processLocally:true});
+  if($('recognition-mode').value!=='local')return;
+  if(state==='available'){
+   $('start').dataset.supported='yes';
+   $('mode-note').textContent='Trình duyệt báo đã có nhận dạng tiếng Việt trên thiết bị.';
+   status('Sẵn sàng khi đã đồng ý ghi âm.');
+  }else if(state==='downloadable'||state==='downloading'){
+   $('mode-note').textContent='Chưa có gói nhận dạng tiếng Việt. Bấm “Cài gói tiếng Việt” sau khi cho phép. Trình duyệt có thể tải dữ liệu model.';
+   status('Cần cài ngôn ngữ trên thiết bị trước khi ghi âm.');
+   $('install-local').hidden=false;
+  }else{
+   $('mode-note').textContent='Nhận dạng tiếng Việt trên thiết bị không khả dụng. Có thể chọn dịch vụ trình duyệt nhưng cần đồng ý rõ ràng.';
+   status('Chế độ này hiện không được hỗ trợ.');
+  }
+ }catch{
+  $('mode-note').textContent='Không kiểm tra được bộ nhận dạng tiếng Việt offline. Không tự dùng dịch vụ mạng.';
+  status('Không xác minh được chế độ xử lý trên thiết bị.');
+ }
+ syncButtons();
+}
+const installButton=document.createElement('button');
+installButton.id='install-local';installButton.type='button';installButton.className='secondary';
+installButton.textContent='Cài gói tiếng Việt trên thiết bị';installButton.hidden=true;
+$('mode-note').after(installButton);
+installButton.addEventListener('click',async()=>{
+ if(!Rec?.install||!$('consent-record').checked)return;
+ installButton.disabled=true;
+ status('Đang yêu cầu trình duyệt cài gói ngôn ngữ trên thiết bị…');
+ try{
+  const result=await Rec.install({langs:['vi-VN'],processLocally:true});
+  if(result===false)throw Error('Language pack was not installed');
+ }catch{status('Không cài được gói tiếng Việt. Trình duyệt có thể không hỗ trợ.');}
+ finally{installButton.disabled=false;installButton.hidden=true;await modeReadiness();}
+});
+$('recognition-mode').addEventListener('change',()=>{
+ if(speechActive||recording)return;
+ installButton.hidden=true;
+ $('consent-remote').checked=false;
+ modeReadiness();
+});
+$('consent-record').addEventListener('change',()=>{
+ if(!$('consent-record').checked){if(speechActive||recording)finish();clearSession();}
+ syncButtons();
+});
+$('consent-remote').addEventListener('change',()=>{
+ if(!$('consent-remote').checked&&$('recognition-mode').value==='browser'&&(speechActive||recording)){finish();clearSession()}
+ syncButtons();
+});
+function stopRecognition(){
+ if(!recognition)return;
+ try{recognition.stop()}catch{}
+}
+function finish(){
+ if(closing)return;
+ closing=true;stopTimer();speechActive=false;stopRecognition();
+ if(recorder?.state==='recording'){try{recorder.stop()}catch{stopTracks();closing=false}}
+ else{stopTracks();closing=false}
+ $('interim').textContent='';
+ status(finalError?('Nhận dạng gặp lỗi: '+finalError+'. Bạn có thể giữ file ghi âm gốc hoặc thử lại.'):
+  (finals.some(Boolean)?'Đã dừng. Hãy nghe lại, sửa transcript và lưu bản sách nháp.':'Đã dừng. Chưa nhận dạng được lời nói; có thể tải file ghi âm gốc.'));
+ syncButtons();
+}
+function clearSession(){
+ stopTimer();stopRecognition();speechActive=false;
+ if(recorder?.state==='recording'){try{recorder.stop()}catch{}}
+ stopTracks();recording=false;closing=false;recorder=null;parts=[];revokeAudio();
+ finals=[];interim='';recognized=false;finalError='';$('transcript').value='';$('interim').textContent='';
+ $('book').hidden=true;status('Đã xóa dữ liệu của phiên trong trang. File đã tải xuống máy cần được xóa riêng nếu muốn.');syncButtons();
+}
+$('start').addEventListener('click',async()=>{
+ if($('start').disabled||!Rec||speechActive||recording||closing)return;
+ if($('recognition-mode').value==='browser'&&!$('consent-remote').checked)return;
+ const mode=$('recognition-mode').value;
+ $('start').disabled=true;finalError='';stopTimer();
+ // A fresh recording always starts a fresh transcript. Never mix sessions.
+ parts=[];finals=[];interim='';$('transcript').value='';$('book').hidden=true;revokeAudio();
+ try{
+  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw Error('Thiết bị không cho phép lưu giọng nói bằng MediaRecorder.');
+  stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  if(!$('consent-record').checked||(mode==='browser'&&!$('consent-remote').checked)){
+   stopTracks();syncButtons();return;
+  }
+  recorder=new MediaRecorder(stream);
+  recorder.ondataavailable=e=>{if(e.data?.size)parts.push(e.data)};
+  recorder.onstop=()=>{
+   stopTracks();recording=false;closing=false;
+   if($('consent-record').checked&&parts.length){
+    const blob=new Blob(parts,{type:recorder.mimeType||'audio/webm'});
+    if(blob.size){audio=blob;audioUrl=URL.createObjectURL(blob);
+     $('playback').src=audioUrl;$('playback').hidden=false;}
+   }
+   parts=[];syncButtons();
+  };
+  recorder.onerror=()=>{finalError='Ghi âm thất bại';finish()};
+  recognition=new Rec();
+  recognition.lang='vi-VN';
+  recognition.continuous=true;recognition.interimResults=true;recognition.maxAlternatives=1;
+  if(mode==='local')recognition.processLocally=true;
+  recognition.onresult=event=>{
+   if(!speechActive)return;
+   for(let i=event.resultIndex;i<event.results.length;i++){
+    const res=event.results[i],value=res[0]?.transcript?.trim();
+    if(!value)continue;
+    if(res.isFinal)finals[i]=value;
+    else interim=value;
+   }
+   if(finals.some(Boolean))recognized=true;
+   updateTranscript();
+  };
+  recognition.onerror=event=>{finalError=event.error||'Không rõ lỗi';finish()};
+  recognition.onend=()=>{if(speechActive)finish()};
+  recorder.start(500);recording=true;speechActive=true;startedAt=Date.now();
+  try{recognition.start()}catch(error){finalError=error?.message||'Không thể khởi động nhận dạng';finish();return}
+  sessionTimer=setTimeout(()=>finish(),MAX_MS);
+  status('Đang nghe và chép lời tiếng Việt… Kể chuyện tự nhiên, bấm Dừng khi xong.');
+  syncButtons();
+ }catch(error){finalError=error?.message||'Microphone không khả dụng';finish()}
+});
+$('stop').addEventListener('click',finish);
+$('clear').addEventListener('click',clearSession);
+$('transcript').addEventListener('input',()=>{$('book').hidden=true;syncButtons()});
+$('download-audio').addEventListener('click',()=>{
+ if(!audio)return;
+ const t=audio.type;
+ download(audio,'heritage-giong-noi-goc.'+(t.includes('mp4')?'m4a':t.includes('ogg')?'ogg':'webm'));
+});
+function download(blob,name){
+ const a=document.createElement('a'),url=URL.createObjectURL(blob);
+ a.href=url;a.download=name;document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+function fillBook(){
+ if(!readText())return false;
+ $('book-title').textContent=$('story-title').value.trim()||'Một kỷ niệm gia đình';
+ $('book-byline').textContent=$('narrator').value.trim();
+ $('book-body').textContent=readText();
+ $('book').hidden=false;return true;
+}
+$('preview').addEventListener('click',()=>{if(fillBook())$('book').scrollIntoView({block:'start',behavior:'smooth'})});
+$('download-text').addEventListener('click',()=>{
+ if(!readText())return;
+ const body='HERITAGE · BẢN NHÁP CHƯA PHÊ DUYỆT\n'+
+  ($('story-title').value.trim()||'Một kỷ niệm gia đình')+'\n'+
+  $('narrator').value.trim()+'\n\n'+readText()+'\n';
+ download(new Blob([body],{type:'text/plain;charset=utf-8'}),'heritage-hoi-ky-chua-duyet.txt');
+});
+$('print').addEventListener('click',()=>{if(fillBook())window.print()});
+window.addEventListener('beforeprint',fillBook);
+window.addEventListener('beforeunload',event=>{
+ if(audio||speechActive||readText()){event.preventDefault();event.returnValue=''}
+});
+window.addEventListener('pagehide',()=>{stopTimer();stopRecognition();stopTracks()});
+modeReadiness();
+</script>
+</body></html>
