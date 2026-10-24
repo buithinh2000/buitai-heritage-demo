@@ -19,7 +19,9 @@ textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
 <header><span class="brand">BuiTai Heritage</span><div class="row"><button class="secondary" id="lang-vi" type="button" aria-pressed="true">Tiếng Việt</button><button class="secondary" id="lang-en" type="button" aria-pressed="false">English</button><span class="pill" data-i18n="demo">Bản demo nội bộ · Chưa bán hàng</span></div></header>
 <section class="hero"><div class="pill" style="display:inline-block" data-i18n="audience">Dành cho gia đình Việt tại Úc</div>
 <h1 data-i18n="hero">Giữ giọng nói hôm nay. Lưu câu chuyện cho mai sau.</h1>
-<p data-i18n="intro">Mời cha mẹ, ông bà kể một kỷ niệm bằng giọng nói thật. Lưu bản ghi và viết lại một chương hồi ký đầu tiên — ngay trên thiết bị của bạn.</p><div class="row"><button id="sample-story" class="secondary" type="button">Xem hồi ký mẫu · Không cần ghi âm</button></div><p class="muted" id="sample-notice">Nội dung hoàn toàn hư cấu, chỉ dùng để thử giao diện và xuất PDF.</p><p class="warning" data-i18n="aiPipelineNotice">Bản web hiện chỉ là demo ghi âm. AI tự nghe, chép lời và soạn hồi ký đang được phát triển riêng; mục nhập tay phía dưới chỉ là công cụ dự phòng, không phải cách sử dụng của sản phẩm hoàn chỉnh.</p></section>
+<p data-i18n="intro">Mời cha mẹ, ông bà kể một kỷ niệm bằng giọng nói thật. Lưu bản ghi và viết lại một chương hồi ký đầu tiên — ngay trên thiết bị của bạn.</p><div class="row"><button id="sample-story" class="secondary" type="button">Xem hồi ký mẫu · Không cần ghi âm</button></div><p class="muted" id="sample-notice">Nội dung hoàn toàn hư cấu, chỉ dùng để thử giao diện và xuất PDF.</p><p class="warning" data-i18n="aiPipelineNotice">Trải nghiệm mới có thể chép tiếng Việt tự động ngay khi kể chuyện (tùy trình duyệt và chế độ đồng ý dữ liệu). AI biên tập thành sách vẫn đang thử nghiệm riêng. Mục nhập tay phía dưới chỉ là công cụ dự phòng.</p>
+<p><a class="button" style="display:inline-block;text-decoration:none;margin:6px 0" href="./voice-auto.html" id="voice-auto-link">🎙️ Thử kể chuyện → tự chép lời tiếng Việt</a></p>
+<p class="muted">Đây là trang thử nghiệm nhận dạng tiếng nói thật bằng trình duyệt. Nếu chọn nhận dạng qua dịch vụ trình duyệt, giọng nói có thể được gửi cho nhà cung cấp và bạn phải đồng ý riêng.</p></section>
 <section class="card record-section">
 <h2 data-i18n="step1">1. Chọn câu hỏi để bắt đầu</h2>
 <label for="prompt" data-i18n="promptLabel">Gợi ý kể chuyện</label>
@@ -37,7 +39,8 @@ textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
 <p id="status" class="muted" aria-live="polite">Chưa ghi âm.</p><audio controls id="playback" style="width:100%;display:none"></audio>
 </section>
 <section class="card no-print" id="manual-transcript">
-<h2 id="manual-transcript-title">2. Chép lời và phê duyệt (thủ công)</h2>
+<h2 id="manual-transcript-title">2. Phương án dự phòng: tự nhập và duyệt lời kể</h2>
+<p><a href="./voice-auto.html">Dùng tính năng tự chép lời tiếng Việt trước →</a></p>
 <p id="manual-transcript-note" class="muted">Nhập lời kể bạn tự nghe lại. Không có AI chép lời, không tự xác minh với audio. Dữ liệu chỉ ở trình duyệt cho đến khi tải file.</p>
 <label for="transcript-draft" id="manual-transcript-label">Nội dung bản chép lời</label>
 <textarea id="transcript-draft" placeholder="Nghe bản ghi và chép lại lời kể ở đây."></textarea>
@@ -48,7 +51,7 @@ textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
 <section class="card story-editor">
 <h2 data-i18n="step2">3. Biên tập câu chuyện (bản nháp)</h2>
 <p id="sample-active-notice" class="warning" role="status" aria-live="polite" hidden>Đang xem câu chuyện mẫu hư cấu — không phải ký ức hoặc lời kể đã xác nhận.</p>
-<p class="muted">Phiên bản demo chưa tự chuyển giọng nói thành văn bản hoặc dùng AI. Gia đình có thể chép lời thủ công và lưu thành tài liệu in được.</p>
+<p class="muted">Trang truyền thống này dùng nhập lời thủ công. Nếu muốn thử <a href="./voice-auto.html">tự chép lời tiếng Việt bằng giọng nói</a>, hãy mở giao diện mới. AI viết hồi ký thành chương chưa có trên website công khai.</p>
 <label for="story-title" data-i18n="storyTitle">Tiêu đề câu chuyện</label><input id="story-title" value="Một kỷ niệm của gia đình">
 <label for="story" data-i18n="storyLabel">Lời kể đã xác nhận</label><textarea id="story" placeholder="Nhập hoặc dán nội dung câu chuyện bằng tiếng Việt. Không thêm điều người kể chưa xác nhận."></textarea>
 <label for="byline" data-i18n="bylineLabel">Người kể (tùy chọn)</label><input id="byline" placeholder="Ví dụ: Bà ngoại">
@@ -97,7 +100,7 @@ textarea{min-height:140px}label{display:block;font-weight:600;margin-top:12px}
 <p class="muted" id="feedback-note">Chia sẻ sẽ mở bảng chọn ứng dụng của điện thoại nếu được hỗ trợ. Bạn quyết định gửi cho ai. Không có người nhận mặc định và không có dữ liệu gia đình được đính kèm.</p>
 <p class="muted" id="feedback-status" role="status" aria-live="polite"></p>
 </section>
-<section class="card privacy"><h2 data-i18n="privacy">Riêng tư ngay từ đầu</h2><p>Trang demo này không gửi âm thanh hoặc câu chuyện lên máy chủ. Bản ghi chỉ tồn tại trong phiên trình duyệt hiện tại cho đến khi bạn tải về. Đóng hoặc tải lại trang có thể làm mất dữ liệu chưa lưu.</p>
+<section class="card privacy"><h2 data-i18n="privacy">Riêng tư ngay từ đầu</h2><p>Trang demo truyền thống này không gửi âm thanh hoặc câu chuyện lên máy chủ. <strong>Trang tự chép lời riêng</strong> có chế độ dịch vụ trình duyệt, có thể chuyển giọng nói tới nhà cung cấp trình duyệt sau khi bạn đồng ý riêng. Bản ghi của trang này chỉ tồn tại trong phiên cho đến khi bạn tải về. Đóng hoặc tải lại có thể làm mất dữ liệu chưa lưu.</p>
 <p class="warning">Chỉ ghi âm khi người kể hiểu mục đích và đồng ý. Đừng ghi các dữ liệu cá nhân nhạy cảm để thử nghiệm.</p><p class="muted" id="leave-warning">Trình duyệt có thể cảnh báo khi rời trang, nhưng một số điện thoại không hiển thị cảnh báo. Hãy tải âm thanh và nội dung về máy trước khi đóng.</p></section>
 <footer class="muted">BuiTai Heritage · Proof of concept · Không xử lý AI, không thanh toán, không lưu trữ đám mây</footer>
 </main><script>
